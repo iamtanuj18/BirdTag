@@ -121,8 +121,8 @@ const FindByTag = () => {
       if (response.ok) {
         const links = data.links || [];
         const images = links.filter((l) => /\.(jpg|jpeg|png)$/i.test(l));
-        const videos = links.filter((l) => /\.(mp4|webm|ogg)$/i.test(l));
-        const audios = links.filter((l) => /\.(mp3|wav|m4a)$/i.test(l));
+        const videos = links.filter((l) => /\.(mp4|webm|ogg|mov|mkv)$/i.test(l));
+        const audios = links.filter((l) => /\.(mp3|wav|m4a|wma|flac|ogg)$/i.test(l));
         setMockResUrls({ images, videos, audios });
         setMessage(
           links.length === 0
