@@ -31,7 +31,7 @@ def lambda_handler(event, context):
         filename  = os.path.basename(s3_key)
         ext       = os.path.splitext(filename)[1].lower()
 
-        if ext not in [".jpg", ".jpeg", ".png", ".mp4", ".wav", ".mp3", ".mov"]:
+        if ext not in [".jpg", ".jpeg", ".png", ".mp4", ".mov", ".mkv", ".wav", ".mp3", ".flac", ".ogg", ".m4a", ".wma"]:
             update_status(s3_key, "unsupported_file")
             s3.delete_object(Bucket=BUCKET_NAME, Key=s3_key)
             return

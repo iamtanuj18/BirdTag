@@ -103,7 +103,9 @@ const FindByFile = () => {
 
         if (["success", "no_bird", "unsupported_file", "error"].includes(data.status)) {
           clearInterval(pollingInterval.current);
+          
           logMessage(`✅ Status: ${data.status} (Results of this are present below)`);
+          
           setUploadComplete(true);
           setIsUploading(false);
           setMessage(data.message || "Done");
@@ -194,8 +196,15 @@ const FindByFile = () => {
       )}
 
  <div style={{ backgroundColor: "white" }}>
-
-        
+  {uploadComplete &&
+    mockResUrls.images.length === 0 &&
+    mockResUrls.videos.length === 0 &&
+    mockResUrls.audios.length === 0 && (
+      <div style={{ color: "red", textAlign: "center", marginBottom: "20px" }}>
+        No media files found from the uploaded file.
+      </div>
+  )}
+     
  {mockResUrls.images?.length > 0 && (
   <>
     <h4>Images: <span style={{color:"red"}}>Please click on image to open full sized image.</span></h4>
