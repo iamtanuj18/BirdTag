@@ -24,6 +24,4 @@ Users can upload media, get species auto-detected, query by species/counts, and 
 
 Only registered users (via Cognito) can access the app. Unauthorized access is blocked.
 
-## 🤝 Team Project – FIT5225 S1 2025 GROUP 113
 
-This was developed as a group submission for the **FIT5225 Cloud Computing** unit at Monash University.
