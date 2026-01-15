@@ -6,13 +6,15 @@ supervision
 #  AWS SDK 
 boto3
 
-#  Core scientific stack 
+#  Core scientific stack (installed separately in Dockerfile to use pre-built wheels)
 numpy==1.26.4
-scipy==1.15.3
+scipy==1.11.4
 
 #  BirdNET audio stack
-birdnet==0.1.7 
-
+birdnet==0.1.7
+resampy<1.0.0,>=0.4.3
+soundfile<1.0.0,>=0.12.1
+ordered-set<5.0.0,>=4.1.0
 
 #  Misc helpers 
 requests==2.32.3

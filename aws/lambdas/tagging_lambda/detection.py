@@ -3,9 +3,11 @@ import boto3
 from pathlib import Path
 from collections import defaultdict
 import subprocess
-# Runtime safe dirs
-os.environ.setdefault("MPLCONFIGDIR", "/tmp")
-os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp")
+
+# Runtime safe dirs - Must be set BEFORE importing ultralytics
+os.environ["MPLCONFIGDIR"] = "/tmp"
+os.environ["YOLO_CONFIG_DIR"] = "/tmp"
+os.environ["ULTRALYTICS_CONFIG_DIR"] = "/tmp"
 
 # Globals
 _YOLO = None
@@ -31,7 +33,15 @@ def _load_yolo():
     """Download & load YOLO model from S3 into /tmp."""
     global _YOLO, _YOLO_NAMES
     if _YOLO is None:
+        # Import after env vars are set
         from ultralytics import YOLO
+        from ultralytics.utils import SETTINGS
+        
+        # Force all Ultralytics directories to /tmp
+        SETTINGS['runs_dir'] = '/tmp/runs'
+        SETTINGS['datasets_dir'] = '/tmp/datasets'
+        SETTINGS['weights_dir'] = '/tmp/weights'
+        
         s3 = boto3.client("s3")
         BUCKET = os.environ["BUCKET_NAME"]
         KEY = os.environ.get("MODEL_S3_PATH", "models/model.pt")
@@ -50,7 +60,9 @@ def detect_birds_in_image(path: str, *, conf: float = 0.5) -> dict[str, int]:
     img = cv.imread(path)
     if img is None:
         return {}
-    det = sv.Detections.from_ultralytics(yolo(img)[0])
+    # Run inference with project parameter to force output to /tmp
+    results = yolo(img, project='/tmp/runs', name='detect', save=False, verbose=False)
+    det = sv.Detections.from_ultralytics(results[0])
     out = {}
     for cid, score in zip(det.class_id, det.confidence, strict=True):
         if score >= conf:
@@ -74,7 +86,9 @@ def detect_birds_in_video(path: str, *, conf: float = 0.5, fps: int = 5) -> dict
         if not ok:
             break
         if idx % step == 0:
-            det = sv.Detections.from_ultralytics(yolo(frame)[0])
+            # Run inference with project parameter to force output to /tmp
+            results = yolo(frame, project='/tmp/runs', name='detect', save=False, verbose=False)
+            det = sv.Detections.from_ultralytics(results[0])
             per = defaultdict(int)
             for cid, score in zip(det.class_id, det.confidence, strict=True):
                 if score >= conf:
@@ -105,7 +119,7 @@ def detect_birds_in_audio(path: str, *, conf: float = 0.7) -> dict[str, int]:
     result: dict[str,int] = {}
     for _, species_pred in preds.items():
         # species_pred is an OrderedDict: species → score
-        for species, score in species_pred.items():    # ← use .items() here
+        for species, score in species_pred.items():
             if score >= conf:
                 name = species.split("_")[-1].strip().lower()
                 result[name] = 1

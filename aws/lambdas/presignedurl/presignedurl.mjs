@@ -1,8 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const REGION = "us-east-1";
-const BUCKET_NAME = "birdtag-stack-media-bucket";
+const REGION = "ap-southeast-2";
+const BUCKET_NAME = "birdtag-demo-media-bucket-9384";
 
 const ALLOWED_FOLDERS = ["uploads", "query_uploads"];
 
@@ -22,7 +22,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const { filename, contentType, folder = "uploads" } = JSON.parse(event.body || "{}");
+    const { filename, contentType, folder = "uploads", userEmail } = JSON.parse(event.body || "{}");
 
     // Validate input
     if (!filename || !contentType) {
@@ -54,6 +54,9 @@ export const handler = async (event) => {
       Bucket: BUCKET_NAME,
       Key: s3Key,
       ContentType: contentType,
+      Metadata: {
+        uploadedBy: userEmail || "unknown"
+      }
     });
 
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 min validity

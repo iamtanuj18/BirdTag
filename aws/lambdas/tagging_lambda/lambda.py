@@ -16,7 +16,7 @@ sns           = boto3.client("sns")
 BUCKET_NAME         = os.environ["BUCKET_NAME"]
 DDB_TABLE_NAME      = os.environ.get("DYNAMODB_TABLE_NAME", "BirdMediaTable")
 STATUS_TABLE_NAME   = os.environ.get("STATUS_TABLE_NAME", "BirdTagProcessingStatus")
-THUMBNAIL_LAMBDA    = os.environ.get("THUMBNAIL_LAMBDA_NAME", "thumbnail-lambda")
+THUMBNAIL_LAMBDA    = os.environ.get("THUMBNAIL_LAMBDA_NAME", "birdtag-thumbnail")
 SNS_TOPIC_ARN       = os.environ.get("SNS_TOPIC_ARN")
 
 table         = dynamodb.Table(DDB_TABLE_NAME)
@@ -38,6 +38,15 @@ def lambda_handler(event, context):
 
         update_status(s3_key, "processing")
 
+        # Get uploaded user from S3 object metadata
+        uploaded_by = "unknown"
+        uploaded_at = int(time.time())
+        try:
+            obj_metadata = s3.head_object(Bucket=BUCKET_NAME, Key=s3_key)
+            uploaded_by = obj_metadata.get("Metadata", {}).get("uploadedby", "unknown")
+        except Exception as e:
+            print(f"Failed to get S3 object metadata: {e}")
+
         with tempfile.TemporaryDirectory() as tmpdir:
             local_path = os.path.join(tmpdir, filename)
             s3.download_file(BUCKET_NAME, s3_key, local_path)
@@ -52,14 +61,17 @@ def lambda_handler(event, context):
 
         thumb_key = None
         if file_type == "image":
-            response     = lambda_client.invoke(
-                FunctionName   = THUMBNAIL_LAMBDA,
-                InvocationType = "RequestResponse",
-                Payload        = json.dumps({"bucket": BUCKET_NAME, "key": s3_key}),
-            )
-            thumb_result = json.load(response["Payload"])
-            thumb_key    = thumb_result.get("thumb_key")
-            print("Thumbnail key returned:", thumb_key)
+            try:
+                response     = lambda_client.invoke(
+                    FunctionName   = THUMBNAIL_LAMBDA,
+                    InvocationType = "RequestResponse",
+                    Payload        = json.dumps({"bucket": BUCKET_NAME, "key": s3_key}),
+                )
+                thumb_result = json.load(response["Payload"])
+                thumb_key    = thumb_result.get("thumb_key")
+                print("Thumbnail key returned:", thumb_key)
+            except Exception as e:
+                print(f"Thumbnail generation failed (non-critical): {e}")
 
         tagset_hash = hashlib.md5(json.dumps(counts, sort_keys=True).encode()).hexdigest()
 
@@ -71,6 +83,8 @@ def lambda_handler(event, context):
             "s3Url"      : f"s3://{BUCKET_NAME}/{s3_key}",
             "thumbUrl"   : f"s3://{BUCKET_NAME}/{thumb_key}" if thumb_key else None,
             "tagsetHash" : tagset_hash,
+            "uploadedBy" : uploaded_by,
+            "uploadedAt" : uploaded_at,
         })
 
         file_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{thumb_key if thumb_key else s3_key}"
@@ -86,6 +100,7 @@ def lambda_handler(event, context):
                         "tags"    : counts,
                         "fileType": file_type,
                         "url"     : file_url,
+                        "uploadedBy": uploaded_by,
                     }),
                 )
             except Exception as e:
