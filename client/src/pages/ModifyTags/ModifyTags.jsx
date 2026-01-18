@@ -31,8 +31,9 @@ const ModifyTags = () => {
   const [submitting, setSubmitting] = useState(false);
   const [countError, setCountError] = useState("");
   
-  // Toast state
+  // Toast state - use ref to persist through re-renders
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const toastTimeoutRef = useRef(null);
   
   const speciesInputRef = useRef(null);
 
@@ -40,6 +41,13 @@ const ModifyTags = () => {
   useEffect(() => {
     fetchMyFiles();
     fetchAllSpecies();
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
   }, []);
 
   const fetchMyFiles = async (isLoadMore = false) => {
@@ -140,7 +148,7 @@ const ModifyTags = () => {
   };
 
   const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
+    const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
@@ -151,7 +159,13 @@ const ModifyTags = () => {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    
+    // Format date as "Jan 16, 2026" for dates older than 7 days
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   const openSpeciesModal = (tags) => {
@@ -170,8 +184,18 @@ const ModifyTags = () => {
 
   // Toast notification
   const showToast = (message, type = "success") => {
+    // Clear any existing timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    
     setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000);
+    
+    // Store timeout ref so it persists through re-renders
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+      toastTimeoutRef.current = null;
+    }, 5000);
   };
 
   // Autocomplete for species
@@ -291,30 +315,32 @@ const ModifyTags = () => {
       const url = file.mediaUrl;
 
       const idToken = localStorage.getItem("id_token");
-      const res = await fetch(`${config.apiGateway.url}/modify-tags`, {
+      const res = await fetch(`${config.apiGateway.url}/query_raw`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: idToken,
         },
         body: JSON.stringify({
-          mode: "replace", // Replace all tags with the new set
+          queryType: "modifyTags",
+          mode: "replace",
           url,
           tags,
         }),
       });
 
       const data = await res.json();
-      if (res.ok) {
-        showToast("Tags updated successfully", "success");
+      if (res.ok && data.status === "success") {
         closeModifyModal();
-        fetchMyFiles(); // Refresh the list
+        showToast("Species updated successfully", "success");
+        // Refresh after a small delay
+        setTimeout(() => fetchMyFiles(), 300);
       } else {
-        showToast(data.error || "Failed to modify tags", "error");
+        showToast(data.message || "Failed to update species", "error");
       }
     } catch (err) {
       console.error("Error modifying tags:", err);
-      showToast("Failed to modify tags", "error");
+      showToast("Failed to update species", "error");
     } finally {
       setSubmitting(false);
     }
@@ -337,22 +363,26 @@ const ModifyTags = () => {
       const url = deleteModal.file.mediaUrl;
       const idToken = localStorage.getItem("id_token");
       
-      const res = await fetch(`${config.apiGateway.url}/delete-file-by-url`, {
+      const res = await fetch(`${config.apiGateway.url}/query_raw`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: idToken,
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({
+          queryType: "deleteFiles",
+          urls: [url],
+        }),
       });
 
       const data = await res.json();
-      if (res.ok) {
-        showToast("File deleted successfully", "success");
+      if (res.ok && data.status === "success") {
         closeDeleteModal();
-        fetchMyFiles(); // Refresh the list
+        showToast("File deleted successfully", "success");
+        // Refresh after a small delay
+        setTimeout(() => fetchMyFiles(), 300);
       } else {
-        showToast(data.error || "Failed to delete file", "error");
+        showToast(data.message || "Failed to delete file", "error");
       }
     } catch (err) {
       console.error("Error deleting file:", err);
@@ -657,8 +687,8 @@ const ModifyTags = () => {
                 {deleteModal.file && (
                   <div className="delete-file-info">
                     <p><strong>File Type:</strong> {deleteModal.file.fileType}</p>
-                    <p><strong>Tags:</strong> {Object.entries(deleteModal.file.tags || {}).map(([sp, cnt]) => `${sp}: ${cnt}`).join(", ")}</p>
-                    <p><strong>Bird Count:</strong> {deleteModal.file.birdCount}</p>
+                    <p><strong>Species present in this file:</strong> {Object.entries(deleteModal.file.tags || {}).map(([sp, cnt]) => `${sp}: ${cnt}`).join(", ")}</p>
+                    <p><strong>Total Birds Detected:</strong> {deleteModal.file.birdCount}</p>
                   </div>
                 )}
               </div>

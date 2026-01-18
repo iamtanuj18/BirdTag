@@ -62,9 +62,7 @@ def scan_all(**kwargs):
 def get_item_by_thumb_https(thumb_https: str):
     s3_thumb = thumb_https.replace(f"https://{BUCKET_NAME}.s3.amazonaws.com/", f"s3://{BUCKET_NAME}/")
     items = scan_all(
-        ProjectionExpression="#k, s3Url, thumbUrl, tags, fileType",
-        FilterExpression=Attr("thumbUrl").eq(s3_thumb),
-        ExpressionAttributeNames={"#k": "mediaId"},
+        FilterExpression=Attr("thumbUrl").eq(s3_thumb)
     )
     return items[0] if items else None
 
@@ -87,7 +85,7 @@ def handle_query_by_species(payload):
     # Scan all items in DynamoDB
     for item in scan_all():
         tags = json.loads(item.get("tags", "{}"))
-        item_species = [tag.lower() for tag in tags.keys()]
+        item_species = [tag.lower() for tag in tags.keys()]  # Normalize for comparison only
         
         if match_mode == "AND":
             # AND logic: file must contain ALL searched species
@@ -157,8 +155,10 @@ def handle_query_by_species(payload):
 def handle_list_species():
     species_set = set()
     for item in scan_all():
-        tags = json.loads(item.get("tags", "{}"))
-        species_set.update(tags.keys())
+        # Only include species from successfully processed files
+        if item.get("status") == "success":
+            tags = json.loads(item.get("tags", "{}"))
+            species_set.update(tags.keys())
     return success({"status": "success", "species": list(sorted(species_set))})
 
 def handle_query_by_thumbnail(payload):
@@ -171,6 +171,66 @@ def handle_query_by_thumbnail(payload):
     return success({"status": "success", "fullSizeUrl": https_from_s3(item["s3Url"])})
 
 def handle_modify_tags(payload):
+    mode = payload.get("mode")  # "replace" or legacy operation (0/1)
+    url = payload.get("url")
+    tags_input = payload.get("tags", [])
+    
+    # Support new "replace" mode
+    if mode == "replace":
+        if not url:
+            return error(400, "Missing 'url' key")
+        
+        # Parse tags
+        tag_updates = {}
+        for t in tags_input:
+            try:
+                name, *cnt = t.split(",")
+                tag_updates[name.strip().lower()] = int(cnt[0]) if cnt else 1
+            except ValueError:
+                return error(400, f"Invalid tag format: {t}")
+        
+        # Get the item
+        item = (
+            get_item_by_thumb_https(url)
+            if "/thumb/" in url
+            else table.get_item(Key={"mediaId": unquote_plus(url.split(f"https://{BUCKET_NAME}.s3.amazonaws.com/")[-1])}).get("Item")
+        )
+        if not item:
+            return error(404, "File not found")
+        
+        original_tags = json.loads(item.get("tags", "{}"))
+        media_id = item["mediaId"]
+        
+        # If no tags, delete the file
+        if not tag_updates:
+            s3.delete_object(Bucket=BUCKET_NAME, Key=media_id)
+            if item.get("thumbUrl"):
+                thumb_key = item["thumbUrl"].replace(f"s3://{BUCKET_NAME}/", "")
+                s3.delete_object(Bucket=BUCKET_NAME, Key=thumb_key)
+            table.delete_item(Key={"mediaId": media_id})
+            
+            send_sns_message(
+                "BirdTag Update Notification",
+                f"{url}\n  ➞ All species removed. File and metadata deleted.\n  Original tags: {original_tags}"
+            )
+            return success({"status": "success", "message": "File deleted (all species removed)"})
+        else:
+            # Use update_item to preserve all existing attributes
+            table.update_item(
+                Key={"mediaId": media_id},
+                UpdateExpression="SET tags = :t, birdCount = :c",
+                ExpressionAttributeValues={
+                    ":t": json.dumps(tag_updates),
+                    ":c": sum(tag_updates.values())
+                }
+            )
+            send_sns_message(
+                "BirdTag Update Notification",
+                f"{url}\n  ➞ Species replaced\n  Before: {original_tags}\n  After: {tag_updates}"
+            )
+            return success({"status": "success", "message": "Tags updated successfully"})
+    
+    # Legacy operation mode (0=remove, 1=add) - kept for backward compatibility
     operation = payload.get("operation")
     mods = payload.get("modifications", [])
 
@@ -202,7 +262,7 @@ def handle_modify_tags(payload):
             failed.append({"url": url, "error": "File not found"})
             continue
 
-        original_tags = {k.lower(): v for k, v in json.loads(item.get("tags", "{}")).items()}
+        original_tags = json.loads(item.get("tags", "{}"))
         tags = original_tags.copy()
 
         if operation == 0:  # REMOVE
@@ -225,17 +285,28 @@ def handle_modify_tags(payload):
         if url in [f["url"] for f in failed]:
             continue
 
-        item["tags"] = json.dumps(tags)
-        item["birdCount"] = sum(tags.values())
+        media_id = item["mediaId"]
+        new_tags_json = json.dumps(tags)
+        new_bird_count = sum(tags.values())
 
         deleted_due_to_zero = False
         if not tags:
-            s3.delete_object(Bucket=BUCKET_NAME, Key=item["mediaId"])
-            s3.delete_object(Bucket=BUCKET_NAME, Key=item["thumbUrl"].replace("s3://", ""))
-            table.delete_item(Key={"mediaId": item["mediaId"]})
+            s3.delete_object(Bucket=BUCKET_NAME, Key=media_id)
+            if item.get("thumbUrl"):
+                thumb_key = item["thumbUrl"].replace(f"s3://{BUCKET_NAME}/", "")
+                s3.delete_object(Bucket=BUCKET_NAME, Key=thumb_key)
+            table.delete_item(Key={"mediaId": media_id})
             deleted_due_to_zero = True
         else:
-            table.put_item(Item=item)
+            # Use update_item to preserve all existing attributes
+            table.update_item(
+                Key={"mediaId": media_id},
+                UpdateExpression="SET tags = :t, birdCount = :c",
+                ExpressionAttributeValues={
+                    ":t": new_tags_json,
+                    ":c": new_bird_count
+                }
+            )
 
         success_list.append(url)
         if deleted_due_to_zero:
@@ -312,14 +383,19 @@ def handle_query_by_tags(payload):
 
     matched_items = []
     
+    # Normalize search species to lowercase for case-insensitive matching
+    search_tags_lower = {species.lower(): count for species, count in tags.items()}
+    
     # Scan all items and match based on minimum count requirements
     for item in scan_all():
         item_tags = json.loads(item.get("tags", "{}"))
+        # Create lowercase mapping for comparison
+        item_tags_lower = {k.lower(): v for k, v in item_tags.items()}
         match = True
         
-        # Check if item has at least the required count for each species
-        for species, required_count in tags.items():
-            actual_count = item_tags.get(species, 0)
+        # Check if item has at least the required count for each species (case-insensitive)
+        for species_lower, required_count in search_tags_lower.items():
+            actual_count = item_tags_lower.get(species_lower, 0)
             if actual_count < required_count:
                 match = False
                 break

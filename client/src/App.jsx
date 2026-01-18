@@ -8,7 +8,6 @@ import FindByTag from "./pages/FindByTag/FindByTag";
 import FindByBird from "./pages/FindByBird/FindByBird";
 import MyMedia from "./pages/MyMedia/MyMedia";
 import FindByFile from "./pages/FindByFile/FindByFile";
-import DeleteFileByUrl from "./pages/DeleteFileByUrl/DeleteFileByUrl";
 import ModifyTags from "./pages/ModifyTags/ModifyTags";
 
 function App() {
@@ -86,14 +85,6 @@ function App() {
         element={
           <ProtectedRoute>
             <FindByFile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/delete-file"
-        element={
-          <ProtectedRoute>
-            <DeleteFileByUrl />
           </ProtectedRoute>
         }
       />

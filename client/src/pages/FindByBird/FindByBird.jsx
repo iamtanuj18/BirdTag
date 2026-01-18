@@ -4,6 +4,65 @@ import config from "../../config.js";
 import { MediaCard } from "../../components/Cards";
 import "./FindByBird.css";
 
+// Helper functions for MediaCard
+const formatDate = (timestamp) => {
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  // Format date as "Jan 16, 2026" for dates older than 7 days
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+};
+
+const openMediaInNewTab = (url) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
+
+const renderMediaPreview = (item) => {
+  if (item.fileType === "image") {
+    return (
+      <img
+        src={item.thumbUrl || item.mediaUrl}
+        alt="Bird media"
+        className="feed-media-preview"
+        loading="lazy"
+        onError={(e) => {
+          e.target.style.display = 'none';
+          e.target.parentElement.innerHTML = '<div style="color:#666;padding:2rem;text-align:center;">Image failed to load</div>';
+        }}
+      />
+    );
+  } else if (item.fileType === "audio") {
+    return (
+      <div className="feed-audio-preview">
+        <div className="audio-icon">🎵</div>
+        <audio controls className="w-100">
+          <source src={item.s3Url || item.fullSizeUrl} type="audio/wav" />
+          Your browser does not support audio playback.
+        </audio>
+      </div>
+    );
+  } else if (item.fileType === "video") {
+    return (
+      <video controls className="feed-media-preview">
+        <source src={item.thumbUrl || item.mediaUrl} type="video/mp4" />
+        Your browser does not support video playback.
+      </video>
+    );
+  }
+};
+
 const FindByBird = () => {
   const navigate = useNavigate();
   
@@ -70,12 +129,13 @@ const FindByBird = () => {
   }, [birdSpecies, allSpecies, savedBirds]);
 
   // Handlers
-  const handleAdd = () => {
-    const trimmed = birdSpecies.trim();
+  const handleAdd = (speciesName = null) => {
+    const trimmed = (speciesName || birdSpecies).trim();
     if (!trimmed) {
       alert("Please enter a species name");
       return;
     }
+    
     if (savedBirds.includes(trimmed)) {
       alert("This species is already added");
       return;
@@ -102,7 +162,10 @@ const FindByBird = () => {
   };
 
   const handleSubmit = async (isLoadMore = false) => {
-    if (savedBirds.length === 0) return;
+    if (savedBirds.length === 0) {
+      alert("Please add at least one species to search");
+      return;
+    }
 
     const idToken = localStorage.getItem("id_token");
     if (!idToken) {
@@ -111,9 +174,13 @@ const FindByBird = () => {
     }
 
     isLoadMore ? setLoadingMore(true) : setLoading(true);
+    
+    // Clear previous results when starting a new search (not load more)
     if (!isLoadMore) {
       setSearchResults([]);
       setSearchAttempted(true);
+      setTotal(0);
+      setHasMore(false);
     }
 
     try {
@@ -148,7 +215,7 @@ const FindByBird = () => {
         setTotal(data.total || 0);
         setHasMore(data.hasMore || false);
         
-        // Auto-scroll to results on first search
+        // Auto-scroll to results on first search (after state updates)
         if (!isLoadMore) {
           setTimeout(() => {
             document.getElementById('search-results')?.scrollIntoView({ 
@@ -163,6 +230,12 @@ const FindByBird = () => {
     } catch (err) {
       console.error("Search failed:", err);
       alert(`Search failed: ${err.message}`);
+      // Set empty results to show "No results found" message
+      if (!isLoadMore) {
+        setSearchResults([]);
+        setTotal(0);
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -209,9 +282,8 @@ const FindByBird = () => {
                       key={idx}
                       className="autocomplete-item"
                       onMouseDown={() => {
-                        setBirdSpecies(sp);
+                        handleAdd(sp);
                         setSuggestedSpecies([]);
-                        setTimeout(() => handleAdd(), 0);
                       }}
                     >
                       {sp}
@@ -222,7 +294,7 @@ const FindByBird = () => {
             </div>
             <button 
               className="btn-add-species" 
-              onClick={handleAdd}
+              onClick={() => handleAdd()}
               disabled={!birdSpecies.trim()}
             >
               + Add Species
@@ -307,19 +379,25 @@ const FindByBird = () => {
         <div className="search-actions">
           <button 
             className="btn-search" 
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={savedBirds.length === 0 || loading}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
           >
             {loading ? (
               <>
-                <span className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }} />
+                <span className="spinner" style={{ 
+                  width: '1rem', 
+                  height: '1rem', 
+                  borderWidth: '2px',
+                  marginRight: '0.5rem'
+                }} />
                 Searching...
               </>
             ) : (
               'Search Media'
             )}
           </button>
-          {savedBirds.length > 0 && (
+          {savedBirds.length > 0 && !loading && (
             <button className="btn-clear" onClick={handleClear}>
               Clear All
             </button>
@@ -346,12 +424,18 @@ const FindByBird = () => {
                 item={{
                   thumbUrl: item.mediaUrl,
                   s3Url: item.fullSizeUrl,
+                  mediaUrl: item.mediaUrl,
+                  fullSizeUrl: item.fullSizeUrl,
                   fileType: item.fileType,
                   tags: item.tags,
                   uploadedBy: item.uploadedBy,
                   uploadedAt: item.uploadedAt
                 }}
-                onViewSpecies={() => {}}
+                renderMediaPreview={renderMediaPreview}
+                formatDate={formatDate}
+                onOpenSpeciesModal={() => {}}
+                onOpenMediaInNewTab={() => openMediaInNewTab(item.fullSizeUrl)}
+                hideUploadedBy={false}
               />
             ))}
           </div>
@@ -359,12 +443,18 @@ const FindByBird = () => {
           {hasMore && (
             <div className="text-center mt-4">
               <button
+                className="btn btn-primary"
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="btn-search"
-                style={{ maxWidth: '300px', margin: '0 auto' }}
               >
-                {loadingMore ? 'Loading...' : `Load More (${total - searchResults.length} remaining)`}
+                {loadingMore ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                  </>
+                ) : (
+                  'Load More'
+                )}
               </button>
             </div>
           )}
