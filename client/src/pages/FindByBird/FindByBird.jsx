@@ -1,20 +1,34 @@
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import config from "../../config.js";
+import { MediaCard } from "../../components/Cards";
+import "./FindByBird.css";
 
 const FindByBird = () => {
   const navigate = useNavigate();
+  
+  // Form state
   const [birdSpecies, setBirdSpecies] = useState("");
   const [savedBirds, setSavedBirds] = useState([]);
-  const [message, setMessage] = useState("");
-  const [suggestedSpecies, setSuggestedSpecies] = useState([]);
+  const [matchMode, setMatchMode] = useState("OR"); // OR or AND
+  
+  // Data state
   const [allSpecies, setAllSpecies] = useState([]);
-  const [mockResUrls, setMockResUrls] = useState({});
+  const [suggestedSpecies, setSuggestedSpecies] = useState([]);
+  
+  // Results state
+  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingImage, setLoadingImage] = useState(null); // stores thumbnail URL being clicked
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [searchAttempted, setSearchAttempted] = useState(false);
+  
+  const inputRef = useRef(null);
 
-  const inputRef = useRef(null); // 🔧 FIX: for handling blur logic safely
+  const ITEMS_PER_PAGE = 9;
 
+  // Fetch all species on mount
   useEffect(() => {
     const fetchSpecies = async () => {
       const idToken = localStorage.getItem("id_token");
@@ -34,8 +48,6 @@ const FindByBird = () => {
         const data = await res.json();
         if (res.ok && data.species) {
           setAllSpecies(data.species);
-        } else {
-          console.warn("Could not fetch species list:", data.message);
         }
       } catch (err) {
         console.error("Error fetching species list:", err);
@@ -44,345 +56,330 @@ const FindByBird = () => {
     fetchSpecies();
   }, [navigate]);
 
+  // Autocomplete filtering
   useEffect(() => {
     const trimmed = birdSpecies.trim().toLowerCase();
-    if (trimmed.length >= 3) {
+    if (trimmed.length >= 2) {
       const matches = allSpecies.filter(
         (s) => s.toLowerCase().includes(trimmed) && !savedBirds.includes(s)
       );
-      setSuggestedSpecies(matches.slice(0, 5));
+      setSuggestedSpecies(matches.slice(0, 8));
     } else {
       setSuggestedSpecies([]);
     }
   }, [birdSpecies, allSpecies, savedBirds]);
 
+  // Handlers
   const handleAdd = () => {
     const trimmed = birdSpecies.trim();
-    if (!trimmed) return alert("Please enter bird species.");
-    if (savedBirds.includes(trimmed)) return alert("This bird species is already in the list.");
+    if (!trimmed) {
+      alert("Please enter a species name");
+      return;
+    }
+    if (savedBirds.includes(trimmed)) {
+      alert("This species is already added");
+      return;
+    }
     setSavedBirds([...savedBirds, trimmed]);
     setBirdSpecies("");
     setSuggestedSpecies([]);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handleRemoveSpecies = (species) => {
+    setSavedBirds(savedBirds.filter(s => s !== species));
   };
 
   const handleClear = () => {
     setSavedBirds([]);
     setBirdSpecies("");
-    setMessage("");
+    setSearchResults([]);
     setSuggestedSpecies([]);
-    setMockResUrls({});
+    setMatchMode("OR");
+    setTotal(0);
+    setHasMore(false);
+    setSearchAttempted(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isLoadMore = false) => {
     if (savedBirds.length === 0) return;
 
-    const payload = {
-      queryType: "bySpecies",
-      species: savedBirds.map((s) => s.trim()),
-    };
-
-    const requestUrl = `${config.apiGateway.url}/query_raw`;
     const idToken = localStorage.getItem("id_token");
-
     if (!idToken) {
       navigate("/");
       return;
     }
 
-    setLoading(true);
-    setMessage("");
-    setMockResUrls({});
-    setSuggestedSpecies([]);
+    isLoadMore ? setLoadingMore(true) : setLoading(true);
+    if (!isLoadMore) {
+      setSearchResults([]);
+      setSearchAttempted(true);
+    }
 
     try {
-      const response = await fetch(requestUrl, {
+      const offset = isLoadMore ? searchResults.length : 0;
+      
+      const response = await fetch(`${config.apiGateway.url}/query_raw`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: idToken,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          queryType: "bySpecies",
+          species: savedBirds,
+          matchMode: matchMode,
+          limit: ITEMS_PER_PAGE,
+          offset: offset,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        const links = data.links || [];
-        const images = links.filter((l) => /\.(jpg|jpeg|png)$/i.test(l));
-        const videos = links.filter((l) => /\.(mp4|webm|ogg|mov|mkv)$/i.test(l));
-        const audios = links.filter((l) => /\.(mp3|wav|m4a|wma|flac|ogg)$/i.test(l));
-        setMockResUrls({ images, videos, audios });
-
-        setMessage(
-          links.length === 0
-            ? "Sorry, couldn't find exact matches."
-            : `Found ${links.length} file(s).`
-        );
-
-        setBirdSpecies("");
-        setSavedBirds([]);
-
-        if (data.suggestedSpecies?.length > 0) {
-          setSuggestedSpecies(data.suggestedSpecies);
+        const items = data.items || [];
+        
+        if (isLoadMore) {
+          setSearchResults((prev) => [...prev, ...items]);
+        } else {
+          setSearchResults(items);
+        }
+        
+        setTotal(data.total || 0);
+        setHasMore(data.hasMore || false);
+        
+        // Auto-scroll to results on first search
+        if (!isLoadMore) {
+          setTimeout(() => {
+            document.getElementById('search-results')?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 100);
         }
       } else {
-        throw new Error(data.message || `${response.status} ${response.statusText}`);
+        throw new Error(data.message || "Search failed");
       }
     } catch (err) {
       console.error("Search failed:", err);
-      setMessage(`Search failed. ${err.message}`);
+      alert(`Search failed: ${err.message}`);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  const handleLoadMore = () => {
+    handleSubmit(true);
+  };
+
   return (
-    <div className="page-content">
-      <h2>Find Files by Bird Species Name(s)</h2>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", position: "relative" }}>
-        <label>
-          Bird Species:&nbsp;
-          <input
-            ref={inputRef}
-            type="text"
-            value={birdSpecies}
-            onChange={(e) => setBirdSpecies(e.target.value)}
-            onBlur={() => setTimeout(() => setSuggestedSpecies([]), 150)} // 🔧 FIX
-            style={{ color: "#fff", backgroundColor: "#333" }}
-          />
-          {suggestedSpecies.length > 0 && birdSpecies.trim().length >= 3 && (
-            <ul style={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              backgroundColor: "#fff",
-              color: "#000",
-              listStyle: "none",
-              padding: "8px",
-              margin: 0,
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              width: "250px",
-              zIndex: 1000
-            }}>
-              {suggestedSpecies.map((sp, idx) => (
-                <li
-                  key={idx}
-                  onMouseDown={() => { // 🔧 FIX
-                    setBirdSpecies(sp);
-                    setSuggestedSpecies([]);
-                  }}
-                  style={{ padding: "4px", cursor: "pointer" }}
-                >
-                  {sp}
-                </li>
-              ))}
-            </ul>
-          )}
-        </label>
-        <button onClick={handleAdd}>Add Species</button>
-        {savedBirds.length > 0 && <button onClick={handleClear}>Clear Species</button>}
+    <div className="species-browser-container">
+      {/* Header */}
+      <div className="species-browser-header">
+        <h1 className="species-browser-title">Search All Community Files by Bird Name</h1>
+        <p className="species-browser-subtitle">
+          Find all photos, videos, and audio files uploaded by any user that contain your selected bird species
+        </p>
       </div>
 
-      {savedBirds.length > 0 && (
-        <>
-          <h3>Species:</h3>
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {savedBirds.map((bird, i) => <li key={i}>{bird}</li>)}
-          </ul>
-        </>
-      )}
-
-      <div style={{ margin: "10px 0" }}>
-        <button onClick={handleSubmit} disabled={savedBirds.length === 0}>
-          Submit
-        </button>
-      </div>
-
-      {loading && (
-        <div className="loader-container">
-          <div className="loader" />
-          <p>Searching bird database...</p>
-        </div>
-      )}
-
-      {(message || Object.values(mockResUrls).some(arr => arr.length)) && (
-        <div style={{
-          marginTop: "20px",
-          padding: "20px",
-          borderRadius: "12px",
-          background: "#fff",
-          boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-          maxWidth: "850px",
-          width: "100%"
-        }}>
-          {message && <div style={{ fontWeight: "bold", marginBottom: "10px" }}>{message}</div>}
-
-          {suggestedSpecies.length > 0 && message.includes("couldn't find") && (
-            <div style={{ marginBottom: "10px" }}>
-              <p>
-                Perhaps you meant: <strong style={{ color: "red" }}>{suggestedSpecies.join(", ")}</strong>
-              </p>
-            </div>
-          )}
-{mockResUrls.images?.length > 0 && (
-  <>
-    <h4>Images: <span style={{color:"red"}}>Please click on image to open full sized image.</span></h4>
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
-      {mockResUrls.images.map((img, i) => (
-        <div
-          key={i}
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            cursor: "pointer",
-          }}
-          onClick={async () => {
-            setLoadingImage(img); // Start spinner
-            try {
-              const idToken = localStorage.getItem("id_token");
-              const res = await fetch(`${config.apiGateway.url}/query_raw`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: idToken,
-                },
-                body: JSON.stringify({
-                  queryType: "byThumbnailUrl",
-                  thumbnailUrl: img,
-                }),
-              });
-              const data = await res.json();
-              if (res.ok && data.fullSizeUrl) {
-                window.open(data.fullSizeUrl, "_blank");
-              } else {
-                alert("Could not fetch full-size image.");
-              }
-            } catch (err) {
-              console.error("Failed to fetch full-size image", err);
-              alert("Error loading full-size image.");
-            } finally {
-              setLoadingImage(null); // Stop spinner
-            }
-          }}
-        >
-          <div style={{ position: "relative" }}>
-            <img
-              src={img}
-              alt={`Image ${i + 1}`}
-              style={{
-                maxWidth: "200px",
-                maxHeight: "200px",
-                borderRadius: "8px",
-                boxShadow: "0 0 8px rgba(0,0,0,0.15)",
-                opacity: loadingImage === img ? 0.5 : 1,
-                transition: "opacity 0.3s ease",
-              }}
-            />
-            {loadingImage === img && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  fontSize: "1.4rem",
-                  fontWeight: "bold",
-                  color: "#333",
+      {/* Search Configuration Card */}
+      <div className="search-config-card">
+        {/* Species Input Section */}
+        <div className="search-section">
+          <label className="search-label">Select Species</label>
+          <div className="species-input-row">
+            <div className="species-input-wrapper">
+              <input
+                ref={inputRef}
+                type="text"
+                className="species-input"
+                placeholder="Type species name (e.g., Kingfisher)..."
+                value={birdSpecies}
+                onChange={(e) => setBirdSpecies(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAdd();
                 }}
-              >
-                ⏳
-              </div>
+                onBlur={() => setTimeout(() => setSuggestedSpecies([]), 200)}
+              />
+              {suggestedSpecies.length > 0 && (
+                <div className="autocomplete-dropdown">
+                  {suggestedSpecies.map((sp, idx) => (
+                    <div
+                      key={idx}
+                      className="autocomplete-item"
+                      onMouseDown={() => {
+                        setBirdSpecies(sp);
+                        setSuggestedSpecies([]);
+                        setTimeout(() => handleAdd(), 0);
+                      }}
+                    >
+                      {sp}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button 
+              className="btn-add-species" 
+              onClick={handleAdd}
+              disabled={!birdSpecies.trim()}
+            >
+              + Add Species
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Species */}
+        <div className="search-section">
+          <label className="search-label">
+            Selected Species {savedBirds.length > 0 && `(${savedBirds.length})`}
+          </label>
+          <div className={`selected-species-container ${savedBirds.length > 0 ? 'has-species' : ''}`}>
+            {savedBirds.length === 0 ? (
+              <span className="empty-species-message">No species selected yet</span>
+            ) : (
+              savedBirds.map((bird, i) => (
+                <div key={i} className="species-chip">
+                  <span>{bird}</span>
+                  <button 
+                    className="chip-remove" 
+                    onClick={() => handleRemoveSpecies(bird)}
+                    aria-label={`Remove ${bird}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))
             )}
           </div>
-          <div style={{ marginTop: "5px", fontSize: "0.9em", textAlign: "center" }}>
-            Download URL:{" "}
-            <a
-              href={img}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()} // 🛑 prevent triggering full-size fetch
-              style={{ color: "#0645AD", wordBreak: "break-all" }}
+        </div>
+
+        {/* Match Mode Section */}
+        <div className="search-section match-mode-section">
+          <label className="search-label">Match Mode</label>
+          <div className="match-mode-options">
+            <label 
+              className={`match-mode-option ${matchMode === "OR" ? "active" : ""}`}
+              htmlFor="mode-or"
             >
-              {img}
-            </a>
+              <input
+                id="mode-or"
+                type="radio"
+                className="match-mode-radio"
+                name="matchMode"
+                value="OR"
+                checked={matchMode === "OR"}
+                onChange={(e) => setMatchMode(e.target.value)}
+              />
+              <div className="match-mode-content">
+                <span className="match-mode-label">Any Species (OR)</span>
+                <span className="match-mode-description">
+                  Shows files with at least one selected species. Example: "Parrot OR Peacock" returns files with Parrot, Peacock, or both (plus any other species)
+                </span>
+              </div>
+            </label>
+            
+            <label 
+              className={`match-mode-option ${matchMode === "AND" ? "active" : ""}`}
+              htmlFor="mode-and"
+            >
+              <input
+                id="mode-and"
+                type="radio"
+                className="match-mode-radio"
+                name="matchMode"
+                value="AND"
+                checked={matchMode === "AND"}
+                onChange={(e) => setMatchMode(e.target.value)}
+              />
+              <div className="match-mode-content">
+                <span className="match-mode-label">All Species (AND)</span>
+                <span className="match-mode-description">
+                  Shows only files with ALL selected species together. Example: "Parrot AND Peacock" returns only files containing both (plus any other species)
+                </span>
+              </div>
+            </label>
           </div>
         </div>
-      ))}
-    </div>
-  </>
-)}
 
-          {mockResUrls.videos?.length > 0 && (
-            <>
-              <h4 style={{ marginTop: "20px" }}>Videos:</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
-                {mockResUrls.videos.map((video, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <video controls width="300" style={{ borderRadius: "8px" }}>
-                      <source src={video} />
-                      Your browser does not support the video tag.
-                    </video>
-                    <div style={{ marginTop: "5px", fontSize: "0.9em" }}>
-                      Thumbnail Download URL: <a href={video} target="_blank" rel="noopener noreferrer">{video}</a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+        {/* Action Buttons */}
+        <div className="search-actions">
+          <button 
+            className="btn-search" 
+            onClick={handleSubmit}
+            disabled={savedBirds.length === 0 || loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }} />
+                Searching...
+              </>
+            ) : (
+              'Search Media'
+            )}
+          </button>
+          {savedBirds.length > 0 && (
+            <button className="btn-clear" onClick={handleClear}>
+              Clear All
+            </button>
           )}
+        </div>
+      </div>
 
-          {mockResUrls.audios?.length > 0 && (
-            <>
-              <h4 style={{ marginTop: "20px" }}>Audio:</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "center" }}>
-                {mockResUrls.audios.map((audio, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <audio controls>
-                      <source src={audio} />
-                      Your browser does not support the audio element.
-                    </audio>
-                    <div style={{ marginTop: "5px", fontSize: "0.9em" }}>
-                      Download URL: <a href={audio} target="_blank" rel="noopener noreferrer">{audio}</a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+      {/* Results Section */}
+      {searchResults.length > 0 && (
+        <div id="search-results" className="results-section">
+          <div className="results-header">
+            <h2 className="results-title">
+              Search Results
+              {total > 0 && (
+                <span className="results-count"> ({total} file{total !== 1 ? 's' : ''})</span>
+              )}
+            </h2>
+          </div>
+
+          <div className="feed-grid">
+            {searchResults.map((item, i) => (
+              <MediaCard
+                key={`${item.mediaId}-${i}`}
+                item={{
+                  thumbUrl: item.mediaUrl,
+                  s3Url: item.fullSizeUrl,
+                  fileType: item.fileType,
+                  tags: item.tags,
+                  uploadedBy: item.uploadedBy,
+                  uploadedAt: item.uploadedAt
+                }}
+                onViewSpecies={() => {}}
+              />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="text-center mt-4">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="btn-search"
+                style={{ maxWidth: '300px', margin: '0 auto' }}
+              >
+                {loadingMore ? 'Loading...' : `Load More (${total - searchResults.length} remaining)`}
+              </button>
+            </div>
           )}
         </div>
       )}
-
-      <div style={{ marginTop: "30px" }}>
-<button
-  style={{
-    backgroundColor: "#111",          
-    color: "#fff",                   
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "1rem",
-    fontWeight: "bold",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-    transition: "background-color 0.3s ease"
-  }}
->
-  <NavLink
-    to="/home"
-    className="nav-link"
-    style={{
-      color: "#fff",                 
-      textDecoration: "none"
-    }}
-  >
-    Back to Home
-  </NavLink>
-</button>
-      </div>
+      
+      {searchResults.length === 0 && !loading && searchAttempted && (
+        <div id="search-results" className="empty-state" style={{ marginTop: '2rem' }}>
+          <div className="empty-state-icon">🔍</div>
+          <h3 className="empty-state-title">No Results Found</h3>
+          <p className="empty-state-message">
+            No community files match your search. Try different species or switch to OR mode for broader results across all user uploads.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

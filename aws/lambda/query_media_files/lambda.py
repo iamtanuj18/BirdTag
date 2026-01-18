@@ -72,36 +72,85 @@ def handle_query_by_species(payload):
     import difflib
 
     species = payload.get("species")
+    match_mode = payload.get("matchMode", "OR")  # Default to OR
+    limit = int(payload.get("limit", 9))  # Default 9 items per page
+    offset = int(payload.get("offset", 0))  # Default start at 0
+    
     if not species:
         return error(400, "Missing 'species' key")
 
-    matches = []
+    # Normalize species to lowercase for comparison
+    search_species = [s.lower() for s in species]
+    matched_items = []
     found_species = set()
 
+    # Scan all items in DynamoDB
     for item in scan_all():
         tags = json.loads(item.get("tags", "{}"))
-        for query_sp in species:
-            for tag_sp in tags:
-                if query_sp.lower() == tag_sp.lower():
-                    found_species.add(tag_sp)
-                    url = item["thumbUrl"] if item["fileType"] == "image" else item["s3Url"]
-                    matches.append(https_from_s3(url))
+        item_species = [tag.lower() for tag in tags.keys()]
+        
+        if match_mode == "AND":
+            # AND logic: file must contain ALL searched species
+            if all(query_sp in item_species for query_sp in search_species):
+                matched_items.append(item)
+                found_species.update(tags.keys())
+        else:
+            # OR logic: file must contain AT LEAST ONE searched species
+            if any(query_sp in item_species for query_sp in search_species):
+                matched_items.append(item)
+                found_species.update(tags.keys())
 
-    if not matches:
-        all_species = sorted(set(k for item in scan_all() for k in json.loads(item.get("tags", "{}"))
-                                  .keys()))
+    # No matches found - suggest similar species
+    if not matched_items:
+        all_species = sorted(set(k for item in scan_all() for k in json.loads(item.get("tags", "{}")).keys()))
         suggestions = []
         for q in species:
             suggestions.extend(difflib.get_close_matches(q, all_species, n=1, cutoff=0.5))
         return success({
             "status": "noMatch",
             "suggestedSpecies": list(set(suggestions)),
-            "links": []
+            "items": [],
+            "total": 0,
+            "hasMore": False
+        })
+
+    # Sort by uploadedAt (newest first)
+    matched_items.sort(key=lambda x: int(x.get("uploadedAt", 0)), reverse=True)
+    
+    # Apply pagination
+    total_count = len(matched_items)
+    paginated_items = matched_items[offset:offset + limit]
+    
+    # Format items for response (similar to feed)
+    formatted_items = []
+    for item in paginated_items:
+        tags_dict = json.loads(item.get("tags", "{}"))
+        file_type = item.get("fileType", "")
+        
+        if file_type == "image":
+            media_url = https_from_s3(item.get("thumbUrl"))
+            full_size_url = https_from_s3(item.get("s3Url"))
+        else:
+            media_url = https_from_s3(item.get("s3Url"))
+            full_size_url = media_url
+        
+        formatted_items.append({
+            "mediaId": item.get("mediaId", ""),
+            "fileType": file_type,
+            "mediaUrl": media_url,
+            "fullSizeUrl": full_size_url,
+            "tags": tags_dict,
+            "birdCount": int(item.get("birdCount", 0)),
+            "uploadedBy": item.get("uploadedBy", "unknown"),
+            "uploadedAt": int(item.get("uploadedAt", 0)),
         })
 
     return success({
         "status": "success",
-        "links": matches,
+        "items": formatted_items,
+        "count": len(formatted_items),
+        "total": total_count,
+        "hasMore": (offset + limit) < total_count,
         "matchedSpecies": list(found_species)
     })
 
@@ -250,25 +299,80 @@ def handle_delete_files(payload):
 
 def handle_query_by_tags(payload):
     tags = payload.get("tags")
+    limit = int(payload.get("limit", 9))  # Default 9 items per page
+    offset = int(payload.get("offset", 0))  # Default start at 0
+    
     if not tags:
         return error(400, "Missing 'tags' key")
+    
+    # Validate that all counts are positive integers
+    for species, required_count in tags.items():
+        if not isinstance(required_count, int) or required_count < 1:
+            return error(400, f"Invalid count for '{species}': must be a positive integer (minimum 1)")
 
-    matches = []
+    matched_items = []
+    
+    # Scan all items and match based on minimum count requirements
     for item in scan_all():
         item_tags = json.loads(item.get("tags", "{}"))
         match = True
+        
+        # Check if item has at least the required count for each species
         for species, required_count in tags.items():
             actual_count = item_tags.get(species, 0)
             if actual_count < required_count:
                 match = False
                 break
+        
         if match:
-            url = item["thumbUrl"] if item["fileType"] == "image" else item["s3Url"]
-            matches.append(https_from_s3(url))
+            matched_items.append(item)
+
+    # No matches found
+    if not matched_items:
+        return success({
+            "status": "noMatch",
+            "items": [],
+            "total": 0,
+            "hasMore": False
+        })
+
+    # Sort by uploadedAt (newest first)
+    matched_items.sort(key=lambda x: int(x.get("uploadedAt", 0)), reverse=True)
+    
+    # Apply pagination
+    total_count = len(matched_items)
+    paginated_items = matched_items[offset:offset + limit]
+    
+    # Format items for response (similar to feed and FindByBird)
+    formatted_items = []
+    for item in paginated_items:
+        tags_dict = json.loads(item.get("tags", "{}"))
+        file_type = item.get("fileType", "")
+        
+        if file_type == "image":
+            media_url = https_from_s3(item.get("thumbUrl"))
+            full_size_url = https_from_s3(item.get("s3Url"))
+        else:
+            media_url = https_from_s3(item.get("s3Url"))
+            full_size_url = media_url
+        
+        formatted_items.append({
+            "mediaId": item.get("mediaId", ""),
+            "fileType": file_type,
+            "mediaUrl": media_url,
+            "fullSizeUrl": full_size_url,
+            "tags": tags_dict,
+            "birdCount": int(item.get("birdCount", 0)),
+            "uploadedBy": item.get("uploadedBy", "unknown"),
+            "uploadedAt": int(item.get("uploadedAt", 0)),
+        })
 
     return success({
         "status": "success",
-        "links": matches
+        "items": formatted_items,
+        "count": len(formatted_items),
+        "total": total_count,
+        "hasMore": (offset + limit) < total_count
     })
 
 def lambda_handler(event, context):

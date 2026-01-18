@@ -54,18 +54,6 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink
-          to="/find-by-tag"
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-          </svg>
-          <span>Find by Tag & Count</span>
-        </NavLink>
-
-        <NavLink
           to="/find-by-bird"
           className={({ isActive }) =>
             isActive ? "sidebar-link active" : "sidebar-link"
@@ -74,7 +62,19 @@ const Sidebar = () => {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
-          <span>Find by Species</span>
+          <span>Search Files by Bird Name</span>
+        </NavLink>
+
+        <NavLink
+          to="/find-by-tag"
+          className={({ isActive }) =>
+            isActive ? "sidebar-link active" : "sidebar-link"
+          }
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <span>Advanced Search (Count Filter)</span>
         </NavLink>
 
         <NavLink
@@ -99,7 +99,7 @@ const Sidebar = () => {
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
             <line x1="7" y1="7" x2="7.01" y2="7"/>
           </svg>
-          <span>Modify Tags</span>
+          <span>Manage My Files</span>
         </NavLink>
 
         <NavLink

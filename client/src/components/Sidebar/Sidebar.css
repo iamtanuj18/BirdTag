@@ -120,11 +120,13 @@
   height: 100vh;
   overflow-y: auto;
   background: var(--color-bg-light);
+  padding-top: 6.5rem;
 }
 
 /* Page Content Wrapper */
 .page-content {
-  padding: 7rem 3rem 2rem;
+  padding: 0 3rem 2rem;
+  margin-top: 0;
 }
 
 /* Responsive Breakpoints */

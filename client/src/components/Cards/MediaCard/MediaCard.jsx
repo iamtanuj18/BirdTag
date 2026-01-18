@@ -7,7 +7,8 @@ const MediaCard = ({
   formatDate, 
   onOpenSpeciesModal, 
   onOpenMediaInNewTab,
-  hideUploadedBy 
+  hideUploadedBy,
+  extraActions
 }) => {
   // Convert tags object to array: { "Species Name": count } => [{ name: "Species Name", count: count }]
   const tagsArray = item.tags ? Object.entries(item.tags).map(([name, count]) => ({ name, count })) : [];
@@ -73,6 +74,9 @@ const MediaCard = ({
           </div>
         )}
 
+        {/* Extra Actions (optional - for Modify/Delete buttons) */}
+        {extraActions && extraActions}
+
         {/* Open Button */}
         <button 
           className="media-open-btn"
@@ -107,10 +111,12 @@ MediaCard.propTypes = {
   onOpenSpeciesModal: PropTypes.func.isRequired,
   onOpenMediaInNewTab: PropTypes.func.isRequired,
   hideUploadedBy: PropTypes.bool,
+  extraActions: PropTypes.node,
 };
 
 MediaCard.defaultProps = {
   hideUploadedBy: false,
+  extraActions: null,
 };
 
 export default MediaCard;
