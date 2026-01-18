@@ -1,0 +1,141 @@
+/* App Layout prevents body scroll only for authenticated pages */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  position: sticky;
+  top: 0;
+  width: 280px;
+  height: 100vh;
+  background: white;
+  border-right: 2px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+/* Logo Section */
+.sidebar-logo {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-bottom: 2px solid var(--color-border-light);
+}
+
+.sidebar-brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Navigation Links */
+.sidebar-nav {
+  flex: 1;
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  color: var(--color-gray);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: var(--transition-base);
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  background: var(--color-bg-light);
+  color: var(--color-dark);
+}
+
+.sidebar-link.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+}
+
+.sidebar-link span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Logout Section */
+.sidebar-footer {
+  padding: 1.5rem;
+  border-top: 2px solid var(--color-border-light);
+}
+
+.sidebar-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.sidebar-logout-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-logout-btn svg {
+  flex-shrink: 0;
+}
+
+/* Main Content Layout */
+.main-content {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--color-bg-light);
+}
+
+/* Page Content Wrapper */
+.page-content {
+  padding: 7rem 3rem 2rem;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 991px) {
+  .sidebar {
+    width: 240px;
+  }
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    width: 200px;
+  }
+}
