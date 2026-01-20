@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext.jsx";
-import MediaCard from "../../components/cards/MediaCard/MediaCard.jsx";
+import MediaCard from "../../components/Cards/MediaCard/MediaCard.jsx";
 import config from "../../config.js";
 import "./ModifyTags.css";
 
@@ -31,23 +31,12 @@ const ModifyTags = () => {
   const [submitting, setSubmitting] = useState(false);
   const [countError, setCountError] = useState("");
   
-  // Toast state - use ref to persist through re-renders
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
-  const toastTimeoutRef = useRef(null);
-  
   const speciesInputRef = useRef(null);
 
   // Fetch data on mount
   useEffect(() => {
     fetchMyFiles();
     fetchAllSpecies();
-    
-    // Cleanup timeout on unmount
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-    };
   }, []);
 
   const fetchMyFiles = async (isLoadMore = false) => {
@@ -78,7 +67,6 @@ const ModifyTags = () => {
       }
     } catch (err) {
       console.error("Error fetching files:", err);
-      showToast("Failed to load your files", "error");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -182,30 +170,15 @@ const ModifyTags = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  // Toast notification
-  const showToast = (message, type = "success") => {
-    // Clear any existing timeout
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    
-    setToast({ show: true, message, type });
-    
-    // Store timeout ref so it persists through re-renders
-    toastTimeoutRef.current = setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
-      toastTimeoutRef.current = null;
-    }, 5000);
-  };
-
-  // Autocomplete for species
+  // Autocomplete for species (suggestions only, user can type anything)
   useEffect(() => {
     if (newSpecies.trim().length >= 2) {
       const trimmed = newSpecies.trim().toLowerCase();
-      const matches = allSpecies.filter(s => 
-        s.toLowerCase().includes(trimmed) &&
-        !tagChanges.hasOwnProperty(s.toLowerCase())
-      );
+      const matches = allSpecies.filter(s => {
+        const existingSpecies = Object.keys(tagChanges);
+        return s.toLowerCase().includes(trimmed) && 
+               !existingSpecies.some(existing => existing.toLowerCase() === s.toLowerCase());
+      });
       setSuggestedSpecies(matches.slice(0, 8));
     } else {
       setSuggestedSpecies([]);
@@ -240,10 +213,10 @@ const ModifyTags = () => {
     }
     
     setCountError("");
-    const speciesLower = newSpecies.trim().toLowerCase();
+    const speciesName = newSpecies.trim();
     setTagChanges(prev => ({
       ...prev,
-      [speciesLower]: count
+      [speciesName]: count
     }));
     setNewSpecies("");
     setNewCount("");
@@ -332,15 +305,14 @@ const ModifyTags = () => {
       const data = await res.json();
       if (res.ok && data.status === "success") {
         closeModifyModal();
-        showToast("Species updated successfully", "success");
-        // Refresh after a small delay
+        alert("✓ Species updated successfully!");
         setTimeout(() => fetchMyFiles(), 300);
       } else {
-        showToast(data.message || "Failed to update species", "error");
+        alert("⚠ " + (data.message || "Failed to update species"));
       }
     } catch (err) {
       console.error("Error modifying tags:", err);
-      showToast("Failed to update species", "error");
+      alert("⚠ Failed to update species");
     } finally {
       setSubmitting(false);
     }
@@ -378,15 +350,14 @@ const ModifyTags = () => {
       const data = await res.json();
       if (res.ok && data.status === "success") {
         closeDeleteModal();
-        showToast("File deleted successfully", "success");
-        // Refresh after a small delay
+        alert("✓ File deleted successfully!");
         setTimeout(() => fetchMyFiles(), 300);
       } else {
-        showToast(data.message || "Failed to delete file", "error");
+        alert("⚠ " + (data.message || "Failed to delete file"));
       }
     } catch (err) {
       console.error("Error deleting file:", err);
-      showToast("Failed to delete file", "error");
+      alert("⚠ Failed to delete file");
     } finally {
       setSubmitting(false);
     }
@@ -395,20 +366,12 @@ const ModifyTags = () => {
   return (
     <div className="page-content">
       <div className="manage-files-container">
-        <div className="manage-files-header">
-          <h1 className="manage-files-title">Manage My Files</h1>
-          <p className="manage-files-subtitle">
-            Modify tags or delete your uploaded bird media files
-          </p>
-        </div>
-
-        {/* Toast Notification */}
-        {toast.show && (
-          <div className={`toast toast-${toast.type}`}>
-            <span className="toast-icon">{toast.type === "success" ? "✓" : "⚠"}</span>
-            <span className="toast-message">{toast.message}</span>
+          <div className="manage-files-header">
+            <h1 className="manage-files-title">Manage My Files</h1>
+            <p className="manage-files-subtitle">
+              Modify tags or delete your uploaded bird media files
+            </p>
           </div>
-        )}
 
         {/* Loading State */}
         {loading && (
@@ -500,6 +463,15 @@ const ModifyTags = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={closeSpeciesModal}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

@@ -10,6 +10,10 @@ const config = {
   apiGateway: {
     url: import.meta.env.VITE_API_GATEWAY_URL,
   },
+
+  lambdaFunctions: {
+    queryWithFileUrl: import.meta.env.VITE_QUERY_WITH_FILE_LAMBDA_URL,
+  },
 };
 
 export default config;

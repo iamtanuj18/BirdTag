@@ -185,7 +185,7 @@ def handle_modify_tags(payload):
         for t in tags_input:
             try:
                 name, *cnt = t.split(",")
-                tag_updates[name.strip().lower()] = int(cnt[0]) if cnt else 1
+                tag_updates[name.strip()] = int(cnt[0]) if cnt else 1
             except ValueError:
                 return error(400, f"Invalid tag format: {t}")
         
@@ -248,7 +248,7 @@ def handle_modify_tags(payload):
         for t in tag_inputs:
             try:
                 name, *cnt = t.split(",")
-                tag_updates[name.strip().lower()] = int(cnt[0]) if cnt else 1
+                tag_updates[name.strip()] = int(cnt[0]) if cnt else 1
             except ValueError:
                 failed.append({"url": url, "error": f"Invalid tag: {t}"})
                 continue

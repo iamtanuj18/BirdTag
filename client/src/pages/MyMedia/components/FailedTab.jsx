@@ -23,6 +23,12 @@ const FailedTab = ({
 
   return (
     <div className="tab-content">
+      <div className="failed-info-banner">
+        <span className="failed-info-icon">⚠️</span>
+        <span className="failed-info-text">
+          All files that failed to process will be automatically deleted in 24 hours from the system along with their metadata.
+        </span>
+      </div>
       <div className="my-media-grid">
         {files.map(file => (
           <div key={file.mediaId} className="card feed-card">

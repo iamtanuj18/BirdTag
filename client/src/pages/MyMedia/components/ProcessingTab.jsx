@@ -23,6 +23,12 @@ const ProcessingTab = ({
 
   return (
     <div className="tab-content">
+      <div className="processing-info-banner">
+        <span className="processing-info-icon">ℹ️</span>
+        <span className="processing-info-text">
+          It may take up to 3-5 minutes for the system to process the files, detect bird species, and save metadata.
+        </span>
+      </div>
       <div className="my-media-grid">
         {files.map(file => (
           <div key={file.mediaId} className="card feed-card">
