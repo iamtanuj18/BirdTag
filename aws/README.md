@@ -64,22 +64,11 @@ aws lambda update-function-code --function-name presigned_url --zip-file fileb:/
 - `BUCKET_NAME`: Bucket with model.pt
 - `MODEL_S3_PATH`: Path to YOLOv8 model (e.g., models/model.pt)
 
-**Deployment (ECR)**:
+**Deployment**: ECR (Docker container)
 ```bash
 cd species_detection
-
-# Build Docker image
 docker build -t species-detection .
-
-# Tag for ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-docker tag species-detection:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/species-detection:latest
-
-# Push to ECR
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/species-detection:latest
-
-# Update Lambda
-aws lambda update-function-code --function-name species_detection --image-uri <account-id>.dkr.ecr.us-east-1.amazonaws.com/species-detection:latest
+# Push to ECR and update Lambda (see deployment guide)
 ```
 
 **Notes**:
@@ -110,12 +99,11 @@ aws lambda update-function-code --function-name species_detection --image-uri <a
 - `BUCKET_NAME`: Bucket with model.pt
 - `MODEL_S3_PATH`: Path to YOLOv8 model
 
-**Deployment (ECR)**:
+**Deployment**: ECR (Docker container)
 ```bash
 cd file_query
-# Same Docker build/push process as species_detection
 docker build -t file-query .
-# ... (same ECR steps)
+# Push to ECR and update Lambda (same as species_detection)
 ```
 
 **Notes**:
@@ -227,11 +215,7 @@ zip function.zip index.py
 aws lambda update-function-code --function-name email_auto_verify --zip-file fileb://function.zip
 ```
 
-**Cognito Configuration**:
-```bash
-aws cognito-idp update-user-pool --user-pool-id <pool-id> \
-  --lambda-config PreSignUp=arn:aws:lambda:region:account:function:email_auto_verify
-```
+**Cognito Configuration**: Add as Pre-signup trigger in Cognito console
 
 ---
 
@@ -259,11 +243,7 @@ zip -r function.zip .
 aws lambda update-function-code --function-name sns_auto_signup --zip-file fileb://function.zip
 ```
 
-**Cognito Configuration**:
-```bash
-aws cognito-idp update-user-pool --user-pool-id <pool-id> \
-  --lambda-config PostConfirmation=arn:aws:lambda:region:account:function:sns_auto_signup
-```
+**Cognito Configuration**: Add as Post-confirmation trigger in Cognito console
 
 ---
 
@@ -314,20 +294,11 @@ your-bucket/
 └── test-files/       # Public test media for downloads
 ```
 
-**S3 Event Configuration**:
-```bash
-# Add event notification for species_detection Lambda
-aws s3api put-bucket-notification-configuration \
-  --bucket your-bucket \
-  --notification-configuration '{
-    "LambdaFunctionConfigurations": [{
-      "LambdaFunctionArn": "arn:aws:lambda:region:account:function:species_detection",
-      "Events": ["s3:ObjectCreated:*"],
-      "Filter": {
-        "Key": {"FilterRules": [{"Name": "prefix", "Value": "uploads/"}]}
-      }
-    }]
-  }'
+### S3 Event Configuration
+Configure S3 event notification:
+- Event: `s3:ObjectCreated:*`
+- Prefix: `uploads/`
+- Lambda: `species_detection`
 ```
 
 ### DynamoDB Table
@@ -502,9 +473,7 @@ sam local start-api
 ./deploy.sh production
 ```
 
----
-
-## Security Best Practices
+## Security
 
 - Use environment variables for all secrets
 - Enable VPC for database access (if using RDS)
@@ -512,8 +481,6 @@ sam local start-api
 - Use S3 bucket policies to restrict access
 - Enable CloudTrail for audit logging
 - Use KMS encryption for S3 and DynamoDB
-
----
 
 ## Model Deployment
 
@@ -528,9 +495,3 @@ aws s3 ls s3://your-bucket/models/
 
 ### BirdNET Model
 BirdNET automatically downloads the model at runtime. No manual upload required.
-
----
-
-## Contact
-
-For deployment issues or questions, refer to the main project README or contact the development team.

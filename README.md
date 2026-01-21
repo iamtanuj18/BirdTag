@@ -186,20 +186,9 @@ See `ENVIRONMENT_SETUP.md` for complete configuration.
 - `POST /file_query` - Reverse image/video/audio search
 - `GET /my_uploaded_files` - User's uploaded files
 
-See `API_ENDPOINTS.md` for complete API documentation.
+See `API_ENDPOINTS.md` for complete documentation.
 
-## License
+---
 
-This project is developed as a portfolio demonstration of serverless architecture and AI integration on AWS.
-
-## Developer
-
-Developed by Tanuj  
-[Portfolio](https://iamtanuj18.github.io/)
-
-## Acknowledgments
-
-- YOLOv8 by Ultralytics
-- BirdNET by Cornell Lab of Ornithology
-- AWS Serverless Architecture
+Developed by [Tanuj](https://iamtanuj18.github.io/)
 

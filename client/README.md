@@ -224,60 +224,17 @@ const config = {
 export default config;
 ```
 
-### API Endpoints Used
+### API Endpoints
 
-1. **POST /presignedurl** - Get S3 upload URL
-   ```javascript
-   POST ${config.apiGateway.url}/presignedurl
-   Body: {
-     filename: string,
-     contentType: string,
-     folder: "uploads" | "query_uploads",
-     userEmail: string
-   }
-   Headers: {
-     Authorization: `Bearer ${idToken}`
-   }
-   ```
+All endpoints use `Authorization: Bearer ${idToken}` header.
 
-2. **GET /feed** - Fetch community feed
-   ```javascript
-   GET ${config.apiGateway.url}/feed?limit=9&offset=0
-   Headers: {
-     Authorization: `Bearer ${idToken}`
-   }
-   ```
+- `POST /presignedurl` - Get S3 upload URL
+- `GET /feed` - Fetch community feed with pagination
+- `POST /query_raw` - Search by species, list species, modify tags
+- `POST /file_query` - Reverse image/video/audio search
+- `GET /my_uploaded_files` - User's uploaded files
 
-3. **POST /query_raw** - Search operations
-   ```javascript
-   POST ${config.apiGateway.url}/query_raw
-   Body: {
-     queryType: "bySpecies" | "listSpecies" | "modifyTag",
-     // ... type-specific parameters
-   }
-   Headers: {
-     Authorization: `Bearer ${idToken}`
-   }
-   ```
-
-4. **POST /file_query** - Reverse search
-   ```javascript
-   POST ${config.lambdaFunctions.queryWithFileUrl}
-   Body: {
-     fileData: string (base64) OR s3Key: string
-   }
-   Headers: {
-     Authorization: `Bearer ${idToken}`
-   }
-   ```
-
-5. **GET /my_uploaded_files** - User's files
-   ```javascript
-   GET ${config.apiGateway.url}/my_uploaded_files?limit=9&offset=0
-   Headers: {
-     Authorization: `Bearer ${idToken}`
-   }
-   ```
+See `config.js` for endpoint configuration.
 
 ## Authentication Flow
 
@@ -463,21 +420,4 @@ console.log('Token expires:', new Date(payload.exp * 1000));
 - Environment variables for configuration
 - HTTPS-only in production
 - Content Security Policy headers recommended
-
-## Contributing
-
-Follow industry-standard practices:
-1. Use meaningful commit messages
-2. Keep components under 300 lines
-3. Extract reusable logic to custom hooks
-4. Use PropTypes for type checking
-5. Follow React 19 best practices (no default imports)
-
-## License
-
-This project is part of a portfolio demonstration.
-
-## Contact
-
-For issues or questions, contact the development team.
 
