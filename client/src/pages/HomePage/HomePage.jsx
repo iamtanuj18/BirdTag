@@ -32,7 +32,7 @@ const HomePage = () => {
         `${config.apiGateway.url}/feed?limit=${ITEMS_PER_PAGE}&offset=${offset}`,
         {
           headers: {
-            Authorization: idToken,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );
@@ -56,7 +56,6 @@ const HomePage = () => {
       }
     } catch (err) {
       setError(err.message);
-      // console.error("Home data fetch error:", err);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -104,7 +103,6 @@ const HomePage = () => {
           className="feed-media-preview"
           loading="lazy"
           onError={(e) => {
-            // console.error("Image failed to load:", item.mediaUrl);
             e.target.style.display = 'none';
             e.target.parentElement.innerHTML = '<div style="color:#666;padding:2rem;text-align:center;">Image failed to load</div>';
           }}

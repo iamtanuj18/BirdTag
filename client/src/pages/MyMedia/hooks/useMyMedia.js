@@ -47,7 +47,7 @@ export const useMyMedia = (userInfo) => {
         `${config.apiGateway.url}/my-media?userEmail=${encodeURIComponent(userInfo)}&limit=${ITEMS_PER_PAGE}&offset=${offset}`,
         {
           headers: {
-            Authorization: idToken,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );
@@ -81,7 +81,6 @@ export const useMyMedia = (userInfo) => {
         previousProcessingRef.current = data.processing || [];
       }
     } catch (err) {
-      console.error("My media fetch error:", err);
       setMyMediaError(err.message);
     } finally {
       setMyMediaLoading(false);
@@ -139,10 +138,8 @@ export const useMyMedia = (userInfo) => {
         
         if (retryCount < 6) {
           uploadRetryCountRef.current.set(uploadUuid, retryCount + 1);
-          console.log(`Upload ${uploadUuid} not found yet, retry ${retryCount + 1}/6`);
         } else {
           // Give up after 6 retries (1 minute)
-          console.warn(`Upload ${uploadUuid} not found after 6 retries, removing from tracking`);
           idsToRemove.add(uploadUuid);
           uploadRetryCountRef.current.delete(uploadUuid);
         }
@@ -194,7 +191,7 @@ export const useMyMedia = (userInfo) => {
             });
           }
         } catch (err) {
-          console.error('Error showing toast notification:', err);
+          // Toast notification failed silently
         }
       });
     }
@@ -215,7 +212,7 @@ export const useMyMedia = (userInfo) => {
         
         const response = await fetch(
           `${config.apiGateway.url}/my-media?userEmail=${encodeURIComponent(userInfo)}&limit=${ITEMS_PER_PAGE}&offset=0`,
-          { headers: { Authorization: idToken } }
+          { headers: { Authorization: `Bearer ${idToken}` } }
         );
         
         if (response.ok) {
@@ -245,14 +242,13 @@ export const useMyMedia = (userInfo) => {
           const retryCount = uploadRetryCountRef.current.get(uuid) || 0;
           if (retryCount >= 15) { // 15 retries × 2 seconds = 30 seconds max
             clearInterval(pollInterval);
-            console.warn(`Upload ${uuid} not found after 30 seconds, stopping poll`);
             if (onFileFound) onFileFound(); // Hide loader anyway
           } else {
             uploadRetryCountRef.current.set(uuid, retryCount + 1);
           }
         }
       } catch (err) {
-        console.error('Error polling for uploaded file:', err);
+        // Polling error - continue silently
       }
     }, 2000); // Poll every 2 seconds
   };

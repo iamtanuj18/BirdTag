@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../../config.js";
 import { MediaCard } from "../../components/Cards";
@@ -99,18 +99,16 @@ const FindByTag = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: idToken,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ queryType: "listSpecies" }),
         });
         const data = await res.json();
         if (res.ok && data.species) {
           setAllSpecies(data.species);
-        } else {
-          console.warn("Could not fetch species list:", data.message);
         }
       } catch (err) {
-        console.error("Error fetching species list:", err);
+        // Species list fetch error handled silently
       }
     };
     fetchSpecies();
@@ -218,7 +216,7 @@ const FindByTag = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           queryType: "byTags",
@@ -255,7 +253,6 @@ const FindByTag = () => {
         throw new Error(data.message || "Search failed");
       }
     } catch (err) {
-      console.error("Search failed:", err);
       alert(`Search failed: ${err.message}`);
       // Set empty results to show "No results found" message
       if (!isLoadMore) {

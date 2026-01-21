@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../../config.js";
 import { MediaCard } from "../../components/Cards";
@@ -66,6 +66,9 @@ const renderMediaPreview = (item) => {
 const FindByBird = () => {
   const navigate = useNavigate();
   
+  // Refs
+  const inputRef = useRef(null);
+  
   // Form state
   const [birdSpecies, setBirdSpecies] = useState("");
   const [savedBirds, setSavedBirds] = useState([]);
@@ -82,8 +85,6 @@ const FindByBird = () => {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [searchAttempted, setSearchAttempted] = useState(false);
-  
-  const inputRef = useRef(null);
 
   const ITEMS_PER_PAGE = 9;
 
@@ -100,7 +101,7 @@ const FindByBird = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: idToken,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ queryType: "listSpecies" }),
         });
@@ -109,7 +110,7 @@ const FindByBird = () => {
           setAllSpecies(data.species);
         }
       } catch (err) {
-        console.error("Error fetching species list:", err);
+        // Species list fetch error handled silently
       }
     };
     fetchSpecies();
@@ -190,7 +191,7 @@ const FindByBird = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           queryType: "bySpecies",
@@ -228,7 +229,6 @@ const FindByBird = () => {
         throw new Error(data.message || "Search failed");
       }
     } catch (err) {
-      console.error("Search failed:", err);
       alert(`Search failed: ${err.message}`);
       // Set empty results to show "No results found" message
       if (!isLoadMore) {

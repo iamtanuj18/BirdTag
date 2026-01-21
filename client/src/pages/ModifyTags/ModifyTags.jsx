@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext.jsx";
 import MediaCard from "../../components/Cards/MediaCard/MediaCard.jsx";
@@ -51,7 +51,7 @@ const ModifyTags = () => {
       const offset = isLoadMore ? myFiles.length : 0;
       const res = await fetch(`${config.apiGateway.url}/my-media?userEmail=${encodeURIComponent(userInfo)}&limit=9&offset=${offset}`, {
         headers: {
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
       });
 
@@ -66,7 +66,7 @@ const ModifyTags = () => {
         setHasMore(data.myMedia.hasMore);
       }
     } catch (err) {
-      console.error("Error fetching files:", err);
+      // Fetch error handled silently
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -82,7 +82,7 @@ const ModifyTags = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ queryType: "listSpecies" }),
       });
@@ -91,7 +91,7 @@ const ModifyTags = () => {
         setAllSpecies(data.species);
       }
     } catch (err) {
-      console.error("Error fetching species:", err);
+      // Species fetch error handled silently
     }
   };
 
@@ -292,7 +292,7 @@ const ModifyTags = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           queryType: "modifyTags",
@@ -311,7 +311,6 @@ const ModifyTags = () => {
         alert("⚠ " + (data.message || "Failed to update species"));
       }
     } catch (err) {
-      console.error("Error modifying tags:", err);
       alert("⚠ Failed to update species");
     } finally {
       setSubmitting(false);
@@ -339,7 +338,7 @@ const ModifyTags = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: idToken,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           queryType: "deleteFiles",
@@ -356,7 +355,6 @@ const ModifyTags = () => {
         alert("⚠ " + (data.message || "Failed to delete file"));
       }
     } catch (err) {
-      console.error("Error deleting file:", err);
       alert("⚠ Failed to delete file");
     } finally {
       setSubmitting(false);

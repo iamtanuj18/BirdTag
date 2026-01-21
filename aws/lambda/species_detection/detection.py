@@ -15,19 +15,17 @@ _YOLO_NAMES = {}
 
 def convert_to_mono(input_path: str, output_path: str):
     try:
-        print("Trying to convert with ffmpeg...")
         subprocess.run([
             "ffmpeg", "-y",
             "-i", input_path,
-            "-ac", "1",             # mono
-            "-ar", "16000",         # resample to 16kHz
-            "-sample_fmt", "s16",   # 16-bit PCM
+            "-ac", "1",
+            "-ar", "16000",
+            "-sample_fmt", "s16",
             output_path
         ], check=True)
         return output_path
     except Exception as e:
-        print("Mono conversion failed:", e)
-        return input_path  # fallback (unsafe)
+        return input_path
 
 def _load_yolo():
     """Download & load YOLO model from S3 into /tmp."""
@@ -110,10 +108,7 @@ def detect_birds_in_audio(path: str, *, conf: float = 0.7) -> dict[str, int]:
     try:
         raw = predict_species_within_audio_file(Path(mono_path))
         preds = SpeciesPredictions(raw)
-        print("[DEBUG] raw generator:", raw)
-        print(f"[DEBUG] Parsed SpeciesPredictions (window → species→score):\n{preds}")
     except Exception as e:
-        print("[ERROR] BirdNET failed:", e)
         return {}
 
     result: dict[str,int] = {}
@@ -123,7 +118,6 @@ def detect_birds_in_audio(path: str, *, conf: float = 0.7) -> dict[str, int]:
             if score >= conf:
                 name = species.split("_")[-1].strip().lower()
                 result[name] = 1
-    print(f"[DEBUG] Final audio‐result dict → {result!r}")
     return result
 
 def detect_birds(file_path: str) -> tuple[str | None, dict[str, int]]:

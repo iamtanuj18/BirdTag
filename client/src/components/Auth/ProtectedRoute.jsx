@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { useAuth } from "../../AuthContext";
 import Sidebar from "../Sidebar/Sidebar";
 
@@ -23,6 +24,10 @@ const ProtectedRoute = ({ children }) => {
       </div>
     </div>
   );
+};
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired
 };
 
 export default ProtectedRoute;

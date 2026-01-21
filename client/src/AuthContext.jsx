@@ -47,14 +47,12 @@ export const AuthProvider = ({ children }) => {
         const currentTime = Math.floor(Date.now() / 1000);
         
         if (decodedToken.exp < currentTime) {
-          console.warn("Token expired");
           logout();
         } else {
           setUserInfo(decodedToken.given_name || decodedToken.email || "User");
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (error) {
-        console.error("Invalid token:", error);
         logout();
       }
     }

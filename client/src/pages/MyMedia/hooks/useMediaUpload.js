@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import config from "../../../config";
-import { ALLOWED_EXTENSIONS, ERROR_MESSAGES, UPLOAD_DELAY } from "../constants";
+import { ALLOWED_EXTENSIONS, ERROR_MESSAGES } from "../constants";
 
 /**
  * Custom hook to manage file uploads
@@ -113,7 +113,6 @@ export const useMediaUpload = (userInfo, onUploadComplete) => {
       }
 
     } catch (error) {
-      console.error("Upload error:", error);
       alert(`${ERROR_MESSAGES.UPLOAD_FAILED}: ${error.message}`);
       setIsUploading(false);
     }

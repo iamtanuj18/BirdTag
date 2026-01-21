@@ -14,6 +14,10 @@ const config = {
   lambdaFunctions: {
     queryWithFileUrl: import.meta.env.VITE_QUERY_WITH_FILE_LAMBDA_URL,
   },
+
+  testFiles: {
+    downloadUrl: import.meta.env.VITE_TEST_FILES_URL || "https://birdtag-demo-media-bucket-9384.s3.ap-southeast-2.amazonaws.com/test-files/test+files.zip",
+  },
 };
 
 export default config;

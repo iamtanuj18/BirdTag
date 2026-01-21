@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import config from "../../config.js";
@@ -167,7 +167,6 @@ const FindByFile = () => {
             
             await handleQueryResponse(response);
           } catch (err) {
-            console.error(err);
             alert(`Detection failed: ${err.message}`);
             setLoading(false);
             setUploadProgress("");
@@ -229,7 +228,6 @@ const FindByFile = () => {
       }
       
     } catch (err) {
-      console.error(err);
       alert(`Process failed: ${err.message}`);
       setLoading(false);
       setUploadProgress("");

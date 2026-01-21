@@ -234,6 +234,115 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* AI Models Section */}
+      <section id="ai-models" className="ai-models-section">
+        <div className="container-fluid px-3 px-lg-5">
+          <div className="text-center mb-5">
+            <h2 className="section-title">AI Models & Detection</h2>
+            <p className="section-subtitle">
+              Advanced deep learning models powering accurate bird identification
+            </p>
+          </div>
+
+          <div className="row g-4 align-items-center">
+            {/* YOLOv8 Visual Detection */}
+            <div className="col-lg-6">
+              <div className="ai-model-card">
+                <div className="ai-model-header">
+                  <div className="ai-model-icon ai-model-icon-visual">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="ai-model-title">YOLOv8 Visual Detection</h3>
+                    <p className="ai-model-subtitle">Images & Videos</p>
+                  </div>
+                </div>
+                <div className="ai-model-body">
+                  <div className="ai-model-stat">
+                    <span className="ai-model-stat-value">7</span>
+                    <span className="ai-model-stat-label">Bird Species</span>
+                  </div>
+                  <ul className="ai-model-features">
+                    <li>Pre-trained object detection model</li>
+                    <li>Real-time species identification</li>
+                    <li>Individual bird counting</li>
+                    <li>Frame-by-frame video analysis</li>
+                  </ul>
+                  <div className="ai-model-species-list">
+                    Crow • Kingfisher • Myna • Owl • Peacock • Pigeon • Sparrow
+                  </div>
+                  <div className="ai-model-badge">50% Confidence Threshold</div>
+                </div>
+              </div>
+            </div>
+
+            {/* BirdNET Audio Detection */}
+            <div className="col-lg-6">
+              <div className="ai-model-card">
+                <div className="ai-model-header">
+                  <div className="ai-model-icon ai-model-icon-audio">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 18V5l12-2v13" />
+                      <circle cx="6" cy="18" r="3" />
+                      <circle cx="18" cy="16" r="3" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="ai-model-title">BirdNET Audio AI</h3>
+                    <p className="ai-model-subtitle">Audio Files</p>
+                  </div>
+                </div>
+                <div className="ai-model-body">
+                  <div className="ai-model-stat">
+                    <span className="ai-model-stat-value">6,000+</span>
+                    <span className="ai-model-stat-label">Species Database</span>
+                  </div>
+                  <ul className="ai-model-features">
+                    <li>Global bird species recognition</li>
+                    <li>Bird call & song identification</li>
+                    <li>Temporal detection with timestamps</li>
+                    <li>16kHz mono audio processing</li>
+                  </ul>
+                  <div className="ai-model-species-list">
+                    Includes common species like Sparrows, Robins, Cardinals, Warblers, and thousands more from North America, Europe, Asia, Africa, and Australia
+                  </div>
+                  <div className="ai-model-badge">70% Confidence Threshold</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supported Formats */}
+          <div className="supported-formats-card mt-5">
+            <h4 className="supported-formats-title">Supported File Formats</h4>
+            <div className="row g-3">
+              <div className="col-md-4">
+                <div className="format-group">
+                  <span className="format-label">Images</span>
+                  <span className="format-types">JPG, PNG, JPEG</span>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="format-group">
+                  <span className="format-label">Videos</span>
+                  <span className="format-types">MP4, MOV, MKV</span>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="format-group">
+                  <span className="format-label">Audio</span>
+                  <span className="format-types">WAV, MP3, FLAC, OGG</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works Section */}
       <section id="how-it-works" className="how-it-works-section">
         <div className="container-fluid px-3 px-lg-5">
@@ -354,15 +463,19 @@ const LandingPage = () => {
             <h2 className="cta-title">Ready to Identify Bird Species Automatically?</h2>
 
             <p className="cta-description">
-              For bird lovers and wildlife enthusiasts. Upload your bird photos, videos, or audio recordings and let AI identify each species and count individual birds automatically.
+              Upload bird images (JPG, PNG), videos (MP4, MOV), or audio files (WAV, MP3, FLAC) and let YOLOv8 & BirdNET identify species and count individuals automatically.
             </p>
 
             <div className="d-flex justify-content-center mb-4">
               <button className="btn btn-cta-primary" onClick={handleAuth}>
-                Start Now
+                Start Now - Test Files Available
                 <ArrowRightIcon />
               </button>
             </div>
+
+            <p className="cta-note">
+              ✨ New users get access to pre-loaded sample files to explore detections instantly
+            </p>
           </div>
         </div>
       </section>
@@ -374,6 +487,14 @@ const LandingPage = () => {
           <div className="text-center pb-4">
             <a href="/" className="footer-brand-link">
               <span className="footer-brand-text">BirdTag</span>
+            </a>
+            <a 
+              href="https://iamtanuj18.github.io" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="footer-developer-link"
+            >
+              Developed by Tanuj
             </a>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
+import config from "../../config";
 import "./Sidebar.css";
 
 const Sidebar = () => {
@@ -8,9 +9,18 @@ const Sidebar = () => {
   return (
     <div className="sidebar">
       {/* Logo section */}
-      <div className="sidebar-logo">
+      <NavLink to="/home" className="sidebar-logo">
         <span className="sidebar-brand">BirdTag</span>
-      </div>
+        <a 
+          href="https://iamtanuj18.github.io" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="sidebar-developer-link"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Developed by Tanuj
+        </a>
+      </NavLink>
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
@@ -102,6 +112,25 @@ const Sidebar = () => {
           <span>Advanced Search (Count Filter)</span>
         </NavLink>
       </nav>
+
+      {/* Test Files Download */}
+      <div className="sidebar-download-section">
+        <a 
+          href={config.testFiles.downloadUrl}
+          download="birdtag-test-files.zip"
+          className="sidebar-download-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          <div className="download-text">
+            <span className="download-label">Download Test Files</span>
+            <span className="download-size">14.6 MB ZIP</span>
+          </div>
+        </a>
+      </div>
 
       {/* Logout Button */}
       <div className="sidebar-footer">
