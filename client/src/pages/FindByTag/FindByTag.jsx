@@ -83,6 +83,10 @@ const FindByTag = () => {
   const [hasMore, setHasMore] = useState(false);
   const [searchAttempted, setSearchAttempted] = useState(false);
   
+  // Species modal state
+  const [modalSpecies, setModalSpecies] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  
   const inputRef = useRef(null);
 
   const ITEMS_PER_PAGE = 9;
@@ -169,6 +173,16 @@ const FindByTag = () => {
 
   const handleRemovePair = (species) => {
     setSavedPairs(savedPairs.filter(p => p.species !== species));
+  };
+
+  const openSpeciesModal = (tags) => {
+    setModalSpecies(tags);
+    setShowModal(true);
+  };
+
+  const closeSpeciesModal = () => {
+    setShowModal(false);
+    setTimeout(() => setModalSpecies(null), 300);
   };
 
   const handleClear = () => {
@@ -422,7 +436,7 @@ const FindByTag = () => {
                 }}
                 renderMediaPreview={renderMediaPreview}
                 formatDate={formatDate}
-                onOpenSpeciesModal={() => {}}
+                onOpenSpeciesModal={() => openSpeciesModal(item.tags)}
                 onOpenMediaInNewTab={() => openMediaInNewTab(item.fullSizeUrl)}
                 hideUploadedBy={false}
               />
@@ -459,7 +473,44 @@ const FindByTag = () => {
           </p>
         </div>
       )}
-    </div>
+      {/* Species Modal */}
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show" onClick={closeSpeciesModal}></div>
+          <div 
+            className="modal fade show" 
+            style={{ display: 'block' }}
+            tabIndex={-1}
+            aria-labelledby="speciesModalLabel" 
+            aria-modal="true"
+            role="dialog"
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title" id="speciesModalLabel">
+                    Species Detected: {modalSpecies ? Object.keys(modalSpecies).length : 0}
+                  </h5>
+                  <button type="button" className="btn-close" onClick={closeSpeciesModal} aria-label="Close"></button>
+                </div>
+                <div className="modal-body">
+                  {modalSpecies && Object.entries(modalSpecies).map(([species, count]) => (
+                    <div key={species} className="modal-species-item">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="species-name">{species}</span>
+                        <span className="species-count">{count} detected</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={closeSpeciesModal}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}    </div>
   );
 };
 

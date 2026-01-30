@@ -1,22 +1,26 @@
 # BirdTag
 
-A serverless bird media platform that enables users to upload images, videos, and audio files containing birds, with automatic AI-powered species detection and community-wide search capabilities.
+A serverless bird media platform that lets you upload images, videos, and audio files of birds. It automatically detects species using AI and lets everyone search through the community uploads.
 
-**Live Demo**: [https://d1le71nhpvak40.cloudfront.net/](https://d1le71nhpvak40.cloudfront.net/)
+---
+
+## 🚀 **[Try the Live Demo Here](https://d1le71nhpvak40.cloudfront.net/)** 🚀
+
+---
 
 ## Overview
 
-BirdTag uses computer vision and audio analysis to automatically identify bird species in uploaded media. Users can search through community uploads by species name, upload similar media for reverse search, and receive email notifications when new birds are detected.
+BirdTag uses computer vision and audio analysis to identify bird species in your uploads. You can search through community uploads by species name, upload your own media for reverse search, and get email notifications when new birds are detected.
 
 ## Key Features
 
-- **Multi-format Support**: Upload images (JPG, PNG), videos (MP4, MOV, MKV), and audio files (WAV, MP3, FLAC, OGG, M4A, WMA)
-- **Dual AI Detection**: YOLOv8 for visual detection (7 species) and BirdNET for audio analysis (6,000+ species)
-- **Real-time Processing**: Automatic species detection with confidence-based filtering
+- **Multi-format Support**: Works with images (JPG, PNG), videos (MP4, MOV, MKV), and audio files (WAV, MP3, FLAC, OGG, M4A, WMA)
+- **Dual AI Detection**: YOLOv8 for visual detection (7 species) + BirdNET for audio analysis (6,000+ species)
+- **Real-time Processing**: Automatic species detection with confidence filtering
 - **Community Feed**: Browse all uploaded bird media with pagination
-- **Advanced Search**: Search by species name with OR/AND logic, reverse image search, and count-based filtering
-- **Email Notifications**: SNS-based alerts for new bird detections and tag modifications
-- **Tag Management**: Edit species tags with automatic SNS notifications
+- **Advanced Search**: Search by species name with OR/AND logic, reverse image search, count-based filtering
+- **Email Notifications**: Get alerts for new bird detections and tag changes
+- **Tag Management**: Edit species tags with automatic notifications
 
 ## Tech Stack
 
@@ -185,10 +189,3 @@ See `ENVIRONMENT_SETUP.md` for complete configuration.
 - `POST /query_raw` - Search by species, list species, modify tags
 - `POST /file_query` - Reverse image/video/audio search
 - `GET /my_uploaded_files` - User's uploaded files
-
-See `API_ENDPOINTS.md` for complete documentation.
-
----
-
-Developed by [Tanuj](https://iamtanuj18.github.io/)
-

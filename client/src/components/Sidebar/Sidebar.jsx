@@ -12,7 +12,7 @@ const Sidebar = () => {
       <NavLink to="/home" className="sidebar-logo">
         <span className="sidebar-brand">BirdTag</span>
         <a 
-          href="https://iamtanuj18.github.io" 
+          href="https://iamtanuj.vercel.app" 
           target="_blank" 
           rel="noopener noreferrer" 
           className="sidebar-developer-link"
