@@ -1,0 +1,24 @@
+# Project-wide ignores 
+
+# IDE & Editor files 
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files 
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Security & Secrets (global)
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/

@@ -1,0 +1,21 @@
+#  Vision stack
+ultralytics
+opencv-python-headless==4.10.0.82    
+supervision
+
+#  AWS SDK 
+boto3
+
+#  Core 
+numpy==1.26.4
+scipy==1.11.4
+
+#  BirdNET audio stack
+birdnet==0.1.7
+resampy<1.0.0,>=0.4.3
+soundfile<1.0.0,>=0.12.1
+ordered-set<5.0.0,>=4.1.0
+
+#  Misc helpers 
+requests==2.32.3
+tqdm==4.67.1

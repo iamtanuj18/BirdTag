@@ -1,0 +1,82 @@
+# AWS Service Ignores
+
+# Python runtime & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+
+# Python virtual environments
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python packaging
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+
+# AWS Lambda deployment packages & layers
+*.zip
+lambda-package.zip
+layer.zip
+deployment-package.zip
+
+# Docker build artifacts (for Lambda containers)
+.dockerignore
+
+# AWS SAM/Serverless Framework
+.aws-sam/
+.serverless/
+cdk.out/
+.cdk.staging/
+
+# AWS CDK
+cdk.context.json
+
+# Terraform (if used)
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+
+# CloudFormation
+packaged.yaml
+packaged.yml
+
+# Environment files & secrets (AWS-specific)
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+.env.reference
+lambdas/.env.reference
+
+# AWS credentials & config
+credentials
+config
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# OS & IDE 
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
