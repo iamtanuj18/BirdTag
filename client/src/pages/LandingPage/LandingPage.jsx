@@ -489,7 +489,7 @@ const LandingPage = () => {
               <span className="footer-brand-text">BirdTag</span>
             </a>
             <a 
-              href="https://iamtanuj.vercel.app" 
+              href="https://github.com/iamtanuj18/BirdTag" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="footer-developer-link"

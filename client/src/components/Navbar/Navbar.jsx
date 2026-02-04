@@ -7,7 +7,7 @@ const Navbar = ({ onAuthClick }) => {
         <div className="navbar-brand-wrapper">
           <a href="/" className="navbar-brand navbar-brand-custom">BirdTag</a>
           <a 
-            href="https://iamtanuj.vercel.app" 
+            href="https://github.com/iamtanuj18/BirdTag" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="navbar-developer-link"
