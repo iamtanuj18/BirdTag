@@ -109,17 +109,17 @@ User uploads query file → File Query Lambda → AI detection
 Query DynamoDB for matching species → Return similar files
 ```
 
-#### Reverse Search Processing
-
-![BirdTag reverse search flow](documents/birdtag_reverse_search_flow.svg)
-
-Reverse search uses the same inference core, but the uploaded query file is temporary. The detected species become search terms against successful media records in DynamoDB instead of creating a permanent media item.
-
 ## Model Inference Flow
 
 ![BirdTag model inference flow](documents/birdtag_model_inference_flow.svg)
 
 The same media-type detection logic is used by both the normal upload/tagging pipeline and reverse search. Image and video files use YOLOv8 object detection, while audio files use BirdNET after FFmpeg normalization.
+
+#### Reverse Search Processing
+
+![BirdTag reverse search flow](documents/birdtag_reverse_search_flow.svg)
+
+Reverse search uses the same inference core, but the uploaded query file is temporary. The detected species become search terms against successful media records in DynamoDB instead of creating a permanent media item.
 
 ## Supported Bird Species
 
