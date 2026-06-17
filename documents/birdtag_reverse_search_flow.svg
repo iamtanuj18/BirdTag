@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 44px Arial, sans-serif; fill: #14213d; }
+      .subtitle { font: 22px Arial, sans-serif; fill: #64748b; }
+      .section { font: 700 22px Arial, sans-serif; fill: #0f172a; }
+      .body { font: 18px Arial, sans-serif; fill: #1e293b; }
+      .small { font: 16px Arial, sans-serif; fill: #475569; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .client { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 16; }
+      .aws { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; rx: 16; }
+      .data { fill: #ecfdf5; stroke: #059669; stroke-width: 2; rx: 16; }
+      .auth { fill: #fefce8; stroke: #ca8a04; stroke-width: 2; rx: 16; }
+      .result { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2; rx: 16; }
+      .warn { fill: #fef2f2; stroke: #dc2626; stroke-width: 2; rx: 16; }
+      .arrow { stroke: #334155; stroke-width: 2.2; fill: none; marker-end: url(#arrowhead); }
+      .dash { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 8 8; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1180"/>
+  <text class="title" x="80" y="82">BirdTag Reverse Search Flow</text>
+  <text class="subtitle" x="80" y="120">Temporary query-file path: detect species from query media, then return existing matching files.</text>
+
+  <rect class="client" x="80" y="190" width="340" height="96"/>
+  <text class="section" x="250" y="226" text-anchor="middle">React Find By File</text>
+  <text class="small" x="250" y="253" text-anchor="middle">user selects a query image,</text>
+  <text class="small" x="250" y="276" text-anchor="middle">video, or audio file</text>
+
+  <line class="arrow" x1="420" y1="238" x2="520" y2="238"/>
+  <rect class="box" x="520" y="175" width="360" height="126"/>
+  <text class="section" x="700" y="212" text-anchor="middle">Choose Query Transport</text>
+  <text class="small" x="700" y="240" text-anchor="middle">small file: base64 in request</text>
+  <text class="small" x="700" y="265" text-anchor="middle">large file: S3 query_uploads/ key</text>
+
+  <path class="arrow" d="M700 301 C700 360, 360 360, 360 430"/>
+  <rect class="client" x="150" y="430" width="420" height="92"/>
+  <text class="section" x="360" y="466" text-anchor="middle">Small File</text>
+  <text class="small" x="360" y="493" text-anchor="middle">base64 is sent directly to Function URL</text>
+
+  <path class="arrow" d="M700 301 C700 360, 1040 360, 1040 430"/>
+  <rect class="data" x="830" y="430" width="420" height="92"/>
+  <text class="section" x="1040" y="466" text-anchor="middle">Large File</text>
+  <text class="small" x="1040" y="493" text-anchor="middle">uploaded as temporary S3 object under query_uploads/</text>
+
+  <path class="arrow" d="M570 476 C705 500, 790 565, 860 645"/>
+  <path class="arrow" d="M1040 522 C1040 575, 1010 610, 970 645"/>
+
+  <rect class="aws" x="720" y="645" width="420" height="112"/>
+  <text class="section" x="930" y="682" text-anchor="middle">Reverse Search Lambda</text>
+  <text class="small" x="930" y="710" text-anchor="middle">Lambda Function URL, longer inference path</text>
+  <text class="small" x="930" y="735" text-anchor="middle">separate from normal API Gateway routes</text>
+
+  <line class="arrow" x1="1140" y1="701" x2="1250" y2="701"/>
+  <rect class="auth" x="1250" y="645" width="400" height="112"/>
+  <text class="section" x="1450" y="682" text-anchor="middle">Validate Cognito JWT</text>
+  <text class="small" x="1450" y="710" text-anchor="middle">fetch/cache JWKS public keys</text>
+  <text class="small" x="1450" y="735" text-anchor="middle">verify RS256 signature and expiry in code</text>
+
+  <path class="arrow" d="M930 757 L930 820"/>
+  <rect class="aws" x="720" y="820" width="420" height="112"/>
+  <text class="section" x="930" y="857" text-anchor="middle">Prepare Local Query File</text>
+  <text class="small" x="930" y="885" text-anchor="middle">save base64 to /tmp or download S3 key</text>
+  <text class="small" x="930" y="910" text-anchor="middle">run shared model inference flow</text>
+
+  <line class="arrow" x1="1140" y1="876" x2="1250" y2="876"/>
+  <rect class="data" x="1250" y="820" width="400" height="112"/>
+  <text class="section" x="1450" y="857" text-anchor="middle">Use Detected Species As Query</text>
+  <text class="small" x="1450" y="885" text-anchor="middle">scan/query successful BirdMediaTable records</text>
+  <text class="small" x="1450" y="910" text-anchor="middle">match stored tags against detected species</text>
+
+  <path class="arrow" d="M930 932 C930 990, 590 990, 590 1030"/>
+  <rect class="result" x="330" y="1010" width="520" height="98"/>
+  <text class="section" x="590" y="1046" text-anchor="middle">Return Response To Frontend</text>
+  <text class="small" x="590" y="1074" text-anchor="middle">detected species, counts, links, matching media</text>
+
+  <path class="dash" d="M930 932 C1060 1000, 1210 1000, 1310 1030"/>
+  <rect class="box" x="1310" y="1010" width="360" height="98"/>
+  <text class="section" x="1490" y="1046" text-anchor="middle">Best-Effort Temp Cleanup</text>
+  <text class="small" x="1490" y="1074" text-anchor="middle">delete query_uploads/ object if S3 path was used</text>
+
+  <rect class="warn" x="80" y="645" width="500" height="190"/>
+  <text class="section" x="330" y="684" text-anchor="middle">Important Difference</text>
+  <text class="body" x="330" y="724" text-anchor="middle">The query file is temporary input.</text>
+  <text class="body" x="330" y="756" text-anchor="middle">Reverse search does not create a permanent media item.</text>
+  <text class="body" x="330" y="788" text-anchor="middle">It returns matches from existing successful uploads.</text>
+  <text class="small" x="330" y="820" text-anchor="middle">Same inference core, different downstream behaviour.</text>
+</svg>

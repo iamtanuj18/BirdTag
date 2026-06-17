@@ -129,10 +129,10 @@ def handle_query_by_species(payload):
         file_type = item.get("fileType", "")
         
         if file_type == "image":
-            media_url = https_from_s3(item.get("thumbUrl"))
-            full_size_url = https_from_s3(item.get("s3Url"))
+            media_url = s3_to_https(item.get("thumbUrl"))
+            full_size_url = s3_to_https(item.get("s3Url"))
         else:
-            media_url = https_from_s3(item.get("s3Url"))
+            media_url = s3_to_https(item.get("s3Url"))
             full_size_url = media_url
         
         formatted_items.append({
@@ -356,7 +356,7 @@ def handle_delete_files(payload):
             item = table.get_item(Key={"mediaId": media_key}).get("Item")
             tags = json.loads(item.get("tags", "{}")) if item else {}
             if item and item.get("thumbUrl"):
-                thumb_key = item["thumbUrl"].replace("s3://", "")
+                thumb_key = item["thumbUrl"].replace(f"s3://{S3_BUCKET_NAME}/", "")
                 s3.delete_object(Bucket=S3_BUCKET_NAME, Key=thumb_key)
             s3.delete_object(Bucket=S3_BUCKET_NAME, Key=media_key)
             table.delete_item(Key={"mediaId": media_key})
@@ -429,10 +429,10 @@ def handle_query_by_tags(payload):
         file_type = item.get("fileType", "")
         
         if file_type == "image":
-            media_url = https_from_s3(item.get("thumbUrl"))
-            full_size_url = https_from_s3(item.get("s3Url"))
+            media_url = s3_to_https(item.get("thumbUrl"))
+            full_size_url = s3_to_https(item.get("s3Url"))
         else:
-            media_url = https_from_s3(item.get("s3Url"))
+            media_url = s3_to_https(item.get("s3Url"))
             full_size_url = media_url
         
         formatted_items.append({

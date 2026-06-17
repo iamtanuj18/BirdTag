@@ -132,14 +132,14 @@ VITE_API_GATEWAY_URL=https://your-api-gateway-id.execute-api.us-east-1.amazonaws
 
 # AWS Cognito Configuration
 VITE_USER_POOL_ID=us-east-1_xxxxxxxxx
-VITE_CLIENT_ID=your-cognito-client-id
+VITE_COGNITO_CLIENT_ID=your-cognito-client-id
 VITE_COGNITO_REGION=us-east-1
 
 # S3 Configuration
 VITE_S3_BUCKET_NAME=your-s3-bucket-name
 
 # Lambda Function URLs (if using Function URLs instead of API Gateway)
-VITE_LAMBDA_QUERY_WITH_FILE_URL=https://your-file-query-lambda-url
+VITE_QUERY_WITH_FILE_LAMBDA_URL=https://your-file-query-lambda-url
 
 # Test Files Download (optional)
 VITE_TEST_FILES_DOWNLOAD_URL=https://your-bucket.s3.amazonaws.com/test-files/test-media.zip
@@ -210,14 +210,14 @@ const config = {
   },
   cognito: {
     userPoolId: import.meta.env.VITE_USER_POOL_ID,
-    clientId: import.meta.env.VITE_CLIENT_ID,
+    clientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
     region: import.meta.env.VITE_COGNITO_REGION
   },
   s3: {
     bucketName: import.meta.env.VITE_S3_BUCKET_NAME
   },
   lambdaFunctions: {
-    queryWithFileUrl: import.meta.env.VITE_LAMBDA_QUERY_WITH_FILE_URL
+    queryWithFileUrl: import.meta.env.VITE_QUERY_WITH_FILE_LAMBDA_URL
   }
 };
 
@@ -231,8 +231,8 @@ All endpoints use `Authorization: Bearer ${idToken}` header.
 - `POST /presignedurl` - Get S3 upload URL
 - `GET /feed` - Fetch community feed with pagination
 - `POST /query_raw` - Search by species, list species, modify tags
-- `POST /file_query` - Reverse image/video/audio search
-- `GET /my_uploaded_files` - User's uploaded files
+- `Lambda Function URL` - Reverse image/video/audio search
+- `GET /my-media` - User's uploaded files
 
 See `config.js` for endpoint configuration.
 

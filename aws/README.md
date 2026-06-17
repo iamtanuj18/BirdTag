@@ -83,7 +83,7 @@ docker build -t species-detection .
 **Runtime**: Python 3.12 (Docker container)  
 **Memory**: 3008 MB  
 **Timeout**: 180 seconds  
-**Trigger**: API Gateway POST `/file_query`
+**Trigger**: Lambda Function URL for long-running reverse search
 
 **Dependencies**:
 - Same as `species_detection` (YOLOv8, BirdNET)
@@ -145,7 +145,7 @@ aws lambda update-function-code --function-name feed_fetch --zip-file fileb://fu
 **Runtime**: Python 3.12  
 **Memory**: 256 MB  
 **Timeout**: 30 seconds  
-**Trigger**: API Gateway GET `/my_uploaded_files`
+**Trigger**: API Gateway GET `/my-media`
 
 **Dependencies**:
 ```
@@ -341,12 +341,12 @@ aws cognito-idp update-user-pool --user-pool-id <pool-id> \
 ```
 
 ### API Gateway
-Create a REST API with the following routes:
+Create the REST API routes and configure the separate reverse-search Function URL:
 - `POST /presignedurl` → presigned_url Lambda
 - `GET /feed` → feed_fetch Lambda
 - `POST /query_raw` → query_media_files Lambda
-- `POST /file_query` → file_query Lambda
-- `GET /my_uploaded_files` → my_uploaded_files Lambda
+- Reverse-search Lambda Function URL -> file_query Lambda
+- `GET /my-media` -> my_uploaded_files Lambda
 
 Enable CORS on all routes.
 

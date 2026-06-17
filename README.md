@@ -80,6 +80,10 @@ BirdTag/
 └── ENVIRONMENT_SETUP.md   # Environment variables guide
 ```
 
+## Architecture Overview
+
+![BirdTag serverless architecture](documents/birdtag_architecture_preview.png)
+
 ## Architecture Flow
 
 ### Upload & Detection Flow
@@ -104,6 +108,18 @@ User uploads query file → File Query Lambda → AI detection
   ↓
 Query DynamoDB for matching species → Return similar files
 ```
+
+#### Reverse Search Processing
+
+![BirdTag reverse search flow](documents/birdtag_reverse_search_flow.svg)
+
+Reverse search uses the same inference core, but the uploaded query file is temporary. The detected species become search terms against successful media records in DynamoDB instead of creating a permanent media item.
+
+## Model Inference Flow
+
+![BirdTag model inference flow](documents/birdtag_model_inference_flow.svg)
+
+The same media-type detection logic is used by both the normal upload/tagging pipeline and reverse search. Image and video files use YOLOv8 object detection, while audio files use BirdNET after FFmpeg normalization.
 
 ## Supported Bird Species
 
@@ -150,9 +166,9 @@ See `aws/README.md` for detailed AWS infrastructure setup.
 ```
 VITE_API_GATEWAY_URL=https://your-api-gateway-url
 VITE_USER_POOL_ID=your-cognito-user-pool-id
-VITE_CLIENT_ID=your-cognito-client-id
+VITE_COGNITO_CLIENT_ID=your-cognito-client-id
 VITE_S3_BUCKET_NAME=your-s3-bucket-name
-VITE_LAMBDA_QUERY_WITH_FILE_URL=https://your-file-query-lambda-url
+VITE_QUERY_WITH_FILE_LAMBDA_URL=https://your-file-query-lambda-url
 ```
 
 ### Backend (Lambda Environment Variables)
@@ -163,6 +179,10 @@ VITE_LAMBDA_QUERY_WITH_FILE_URL=https://your-file-query-lambda-url
 - `THUMBNAIL_LAMBDA_ARN`: ARN for thumbnail generation Lambda
 
 See `ENVIRONMENT_SETUP.md` for complete configuration.
+
+## Production Hardening Notes
+
+The current project keeps a few areas intentionally simple for a portfolio/demo deployment. In production, the backend should derive the user identity from verified Cognito JWT claims instead of trusting client-supplied `userEmail` values, and the S3 bucket should include a lifecycle rule for `query_uploads/` so interrupted reverse-search uploads are cleaned up even if the Lambda times out or crashes before its own cleanup block runs.
 
 ## Security Features
 
@@ -187,5 +207,5 @@ See `ENVIRONMENT_SETUP.md` for complete configuration.
 - `POST /presignedurl` - Generate S3 upload URL
 - `GET /feed` - Retrieve paginated feed
 - `POST /query_raw` - Search by species, list species, modify tags
-- `POST /file_query` - Reverse image/video/audio search
-- `GET /my_uploaded_files` - User's uploaded files
+- `Lambda Function URL` - Reverse image/video/audio search
+- `GET /my-media` - User's uploaded files

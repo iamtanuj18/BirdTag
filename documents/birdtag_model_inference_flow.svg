@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 46px Arial, sans-serif; fill: #14213d; }
+      .subtitle { font: 22px Arial, sans-serif; fill: #64748b; }
+      .section { font: 700 24px Arial, sans-serif; fill: #0f172a; }
+      .body { font: 18px Arial, sans-serif; fill: #1e293b; }
+      .small { font: 16px Arial, sans-serif; fill: #475569; }
+      .tiny { font: 14px Arial, sans-serif; fill: #64748b; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .input { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 16; }
+      .image { fill: #ecfdf5; stroke: #059669; stroke-width: 2; rx: 16; }
+      .video { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; rx: 16; }
+      .audio { fill: #fdf2f8; stroke: #db2777; stroke-width: 2; rx: 16; }
+      .result { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2; rx: 16; }
+      .caller { fill: #f1f5f9; stroke: #64748b; stroke-width: 2; rx: 16; }
+      .arrow { stroke: #334155; stroke-width: 2.2; fill: none; marker-end: url(#arrowhead); }
+      .dash { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 8 8; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1320"/>
+  <text class="title" x="80" y="82">BirdTag Model Inference Flow</text>
+  <text class="subtitle" x="80" y="120">Shared media-type detection logic used by both upload tagging and reverse search.</text>
+
+  <rect class="input" x="640" y="165" width="520" height="86"/>
+  <text class="section" x="900" y="202" text-anchor="middle">Input Media File</text>
+  <text class="small" x="900" y="229" text-anchor="middle">local file in Lambda /tmp after S3 download or base64 decode</text>
+
+  <line class="arrow" x1="900" y1="251" x2="900" y2="312"/>
+  <rect class="box" x="690" y="312" width="420" height="72"/>
+  <text class="section" x="900" y="344" text-anchor="middle">Detect File Extension</text>
+  <text class="small" x="900" y="369" text-anchor="middle">route to image, video, audio, or unsupported</text>
+
+  <path class="arrow" d="M900 384 C900 430, 330 430, 330 480"/>
+  <path class="arrow" d="M900 384 C900 430, 900 430, 900 480"/>
+  <path class="arrow" d="M900 384 C900 430, 1470 430, 1470 480"/>
+
+  <rect class="image" x="90" y="480" width="480" height="420"/>
+  <text class="section" x="330" y="520" text-anchor="middle">Image Branch</text>
+  <text class="small" x="330" y="548" text-anchor="middle">.jpg, .jpeg, .png</text>
+  <rect class="box" x="125" y="585" width="410" height="60"/>
+  <text class="body" x="330" y="622" text-anchor="middle">OpenCV loads image pixels</text>
+  <line class="arrow" x1="330" y1="645" x2="330" y2="680"/>
+  <rect class="box" x="125" y="680" width="410" height="78"/>
+  <text class="body" x="330" y="710" text-anchor="middle">Load YOLOv8 object detector</text>
+  <text class="small" x="330" y="735" text-anchor="middle">model weights from S3 into /tmp if not cached</text>
+  <line class="arrow" x1="330" y1="758" x2="330" y2="793"/>
+  <rect class="box" x="125" y="793" width="410" height="78"/>
+  <text class="body" x="330" y="823" text-anchor="middle">YOLOv8 inference on image</text>
+  <text class="small" x="330" y="848" text-anchor="middle">bounding boxes + class IDs + confidence</text>
+
+  <rect class="video" x="660" y="480" width="480" height="420"/>
+  <text class="section" x="900" y="520" text-anchor="middle">Video Branch</text>
+  <text class="small" x="900" y="548" text-anchor="middle">.mp4, .mov, .mkv</text>
+  <rect class="box" x="695" y="585" width="410" height="60"/>
+  <text class="body" x="900" y="622" text-anchor="middle">OpenCV opens video stream</text>
+  <line class="arrow" x1="900" y1="645" x2="900" y2="680"/>
+  <rect class="box" x="695" y="680" width="410" height="78"/>
+  <text class="body" x="900" y="710" text-anchor="middle">Sample frames at about 5 fps</text>
+  <text class="small" x="900" y="735" text-anchor="middle">based on native video FPS</text>
+  <line class="arrow" x1="900" y1="758" x2="900" y2="793"/>
+  <rect class="box" x="695" y="793" width="410" height="78"/>
+  <text class="body" x="900" y="823" text-anchor="middle">YOLOv8 per sampled frame</text>
+  <text class="small" x="900" y="848" text-anchor="middle">same object detector as image branch</text>
+
+  <rect class="audio" x="1230" y="480" width="480" height="420"/>
+  <text class="section" x="1470" y="520" text-anchor="middle">Audio Branch</text>
+  <text class="small" x="1470" y="548" text-anchor="middle">.wav, .mp3, .flac, .ogg, .m4a, .wma</text>
+  <rect class="box" x="1265" y="585" width="410" height="78"/>
+  <text class="body" x="1470" y="615" text-anchor="middle">FFmpeg normalizes audio</text>
+  <text class="small" x="1470" y="640" text-anchor="middle">mono, 16 kHz, signed 16-bit WAV</text>
+  <line class="arrow" x1="1470" y1="663" x2="1470" y2="698"/>
+  <rect class="box" x="1265" y="698" width="410" height="78"/>
+  <text class="body" x="1470" y="728" text-anchor="middle">BirdNET audio classifier</text>
+  <text class="small" x="1470" y="753" text-anchor="middle">species predictions + confidence scores</text>
+  <line class="arrow" x1="1470" y1="776" x2="1470" y2="811"/>
+  <rect class="box" x="1265" y="811" width="410" height="60"/>
+  <text class="body" x="1470" y="848" text-anchor="middle">Filter confidence >= 0.7</text>
+
+  <line class="arrow" x1="330" y1="871" x2="330" y2="940"/>
+  <rect class="box" x="125" y="940" width="410" height="96"/>
+  <text class="body" x="330" y="971" text-anchor="middle">Filter confidence >= 0.5</text>
+  <text class="small" x="330" y="997" text-anchor="middle">map class IDs to species names</text>
+  <text class="small" x="330" y="1022" text-anchor="middle">count detections per species</text>
+
+  <line class="arrow" x1="900" y1="871" x2="900" y2="940"/>
+  <rect class="box" x="695" y="940" width="410" height="96"/>
+  <text class="body" x="900" y="971" text-anchor="middle">Count species per frame</text>
+  <text class="small" x="900" y="997" text-anchor="middle">avoid summing repeated frames</text>
+  <text class="small" x="900" y="1022" text-anchor="middle">keep max count per species</text>
+
+  <line class="arrow" x1="1470" y1="871" x2="1470" y2="940"/>
+  <rect class="box" x="1265" y="940" width="410" height="96"/>
+  <text class="body" x="1470" y="971" text-anchor="middle">Extract species names</text>
+  <text class="small" x="1470" y="997" text-anchor="middle">audio is presence-style detection</text>
+  <text class="small" x="1470" y="1022" text-anchor="middle">count = 1 per detected species</text>
+
+  <path class="arrow" d="M330 1036 C330 1095, 760 1085, 805 1135"/>
+  <path class="arrow" d="M900 1036 L900 1128"/>
+  <path class="arrow" d="M1470 1036 C1470 1095, 1040 1085, 995 1135"/>
+
+  <rect class="result" x="630" y="1128" width="540" height="98"/>
+  <text class="section" x="900" y="1163" text-anchor="middle">Normalized Detection Result</text>
+  <text class="body" x="900" y="1194" text-anchor="middle">species -> count / presence</text>
+  <text class="small" x="900" y="1220" text-anchor="middle">example: {"pigeon": 2, "sparrow": 1}</text>
+
+  <line class="arrow" x1="900" y1="1226" x2="900" y2="1260"/>
+  <rect class="caller" x="500" y="1260" width="800" height="44"/>
+  <text class="small" x="900" y="1288" text-anchor="middle">Caller decides next step: tagging Lambda stores metadata; reverse-search Lambda queries matching media.</text>
+</svg>
